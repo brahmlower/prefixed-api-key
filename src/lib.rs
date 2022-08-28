@@ -91,7 +91,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyGenerator<R, H> {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum PrefixedApiKeyError {
     WrongNumberOfParts(usize),
 }
@@ -100,7 +100,8 @@ impl Error for PrefixedApiKeyError {}
 
 impl fmt::Display for PrefixedApiKeyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        // TODO: Display should use something other than debug display
+        write!(f, "{:?}", self)
     }
 }
 
@@ -139,7 +140,7 @@ impl PrefixedApiKey {
     }
 
     pub fn from_string(pak_string: &str) -> Result<PrefixedApiKey, PrefixedApiKeyError> {
-        let parts: Vec<&str> = pak_string.split("_").collect();
+        let parts: Vec<&str> = pak_string.split('_').collect();
 
         if parts.len() != 3 {
             // Incorrect number of parts
