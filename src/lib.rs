@@ -37,15 +37,15 @@ impl Default for GeneratorOptions {
 }
 
 #[derive(Debug)]
-pub struct PrefixedApiKeyGenerator<'a, R: RngCore, H: Digest + FixedOutputReset> {
+pub struct PrefixedApiKeyGenerator<R: RngCore, H: Digest + FixedOutputReset> {
     prefix: String,
-    rng_source: &'a mut R,
+    rng_source: R,
     hasher: H,
     options: GeneratorOptions,
 }
 
-impl<'a, R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyGenerator<'a, R, H> {
-    pub fn new(prefix: String, rng_source: &'a mut R, hasher: H, options: GeneratorOptions) -> PrefixedApiKeyGenerator<R, H> {
+impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyGenerator<R, H> {
+    pub fn new(prefix: String, rng_source: R, hasher: H, options: GeneratorOptions) -> PrefixedApiKeyGenerator<R, H> {
         PrefixedApiKeyGenerator {
             prefix,
             rng_source,
@@ -233,11 +233,10 @@ mod tests {
     #[test]
     fn generator() {
         let prefix = "mycompany".to_owned();
-        let mut rng_source = OsRng;
         let gen_options = GeneratorOptions::default();
         let mut generator = PrefixedApiKeyGenerator::new(
             prefix,
-            &mut rng_source,
+            OsRng,
             Sha256::new(),
             gen_options
         );
@@ -255,11 +254,9 @@ mod tests {
         let gen_options = GeneratorOptions::default()
             .short_token_length(short_length)
             .short_token_prefix(Some(short_prefix.clone()));
-        let prefix = "mycompany".to_owned();
-        let mut rng_source = OsRng;
         let mut generator = PrefixedApiKeyGenerator::new(
-            prefix,
-            &mut rng_source,
+            "mycompany".to_owned(),
+            OsRng,
             Sha256::new(),
             gen_options
         );
@@ -273,14 +270,11 @@ mod tests {
         let hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
 
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
-        let hasher = Sha256::new();
 
-        let prefix = "mycompany".to_owned();
-        let mut rng_source = OsRng;
         let mut generator = PrefixedApiKeyGenerator::new(
-            prefix,
-            &mut rng_source,
-            hasher,
+            "mycompany".to_owned(),
+            OsRng,
+            Sha256::new(),
             GeneratorOptions::default()
         );
 
@@ -297,12 +291,10 @@ mod tests {
         let pak2_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
         let pak2: PrefixedApiKey = pak2_string.try_into().unwrap();
 
-        let hasher = Sha256::new();
-        let mut rng_source = OsRng;
         let mut generator = PrefixedApiKeyGenerator::new(
             "mycompany".to_owned(),
-            &mut rng_source,
-            hasher,
+            OsRng,
+            Sha256::new(),
             GeneratorOptions::default()
         );
 
