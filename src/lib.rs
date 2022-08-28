@@ -1,3 +1,4 @@
+use crypto::util::fixed_time_eq;
 use digest::{Digest, FixedOutputReset};
 use rand::RngCore;
 use std::{error::Error, fmt};
@@ -88,6 +89,11 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyGenerator<R, H> {
 
     pub fn long_token_hashed(&mut self, pak: PrefixedApiKey) -> String {
         pak.long_token_hashed(&mut self.hasher)
+    }
+
+    pub fn check_hash(&mut self, pak: PrefixedApiKey, hash: String) -> bool {
+        let pak_hash = pak.long_token_hashed(&mut self.hasher);
+        fixed_time_eq(pak_hash.as_bytes(), hash.as_bytes())
     }
 }
 
@@ -297,5 +303,21 @@ mod tests {
 
         assert_eq!(generator.long_token_hashed(pak1), pak1_hash);
         assert_eq!(generator.long_token_hashed(pak2), pak2_hash);
+    }
+
+    #[test]
+    fn generator_matches_hash() {
+        let pak_string = "mycompany_CEUsS4psCmc_BddpcwWyCT3EkDjHSSTRaSK1dxtuQgbjb";
+        let pak_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
+        let pak: PrefixedApiKey = pak_string.try_into().unwrap();
+
+        let mut generator = PrefixedApiKeyGenerator::new(
+            "mycompany".to_owned(),
+            OsRng,
+            Sha256::new(),
+            GeneratorOptions::default(),
+        );
+
+        assert!(generator.check_hash(pak, pak_hash.to_string()));
     }
 }

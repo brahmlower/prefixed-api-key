@@ -8,6 +8,7 @@ digest = "0.10.3"
 bs58 = "0.4.0"
 rand = "0.8.5"
 hex = "0.4.3"
+rust-crypto = "0.2.36"
 
 [dev-dependencies]
 sha2 = "0.10.2"
