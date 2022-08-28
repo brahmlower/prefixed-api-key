@@ -1,5 +1,5 @@
 use rand::RngCore;
-use sha2::{Digest, Sha256};
+use digest::Digest;
 use std::{error::Error, fmt};
 
 #[derive(Debug)]
@@ -65,8 +65,8 @@ impl<'a, R: RngCore> PrefixedApiKeyGenerator<'a, R> {
     pub fn new_key(&mut self) -> PrefixedApiKey {
         let mut short_token = self.generate_token(self.options.short_token_length);
         if self.options.short_token_prefix.is_some() {
-            short_token = (self.options.short_token_prefix.as_ref().unwrap().to_owned()
-                + &short_token)
+            let prefix_string = self.options.short_token_prefix.as_ref().unwrap().to_owned();
+            short_token = (prefix_string + &short_token)
                 .chars()
                 .take(self.options.short_token_length)
                 .collect()
@@ -117,9 +117,8 @@ impl PrefixedApiKey {
         &self.long_token
     }
 
-    /// Sha256 hash the long token and return the hex digest
-    pub fn long_token_hashed(&self) -> String {
-        let mut hasher = Sha256::new();
+    /// Hashes the long token using the provided hashing algorithm
+    pub fn long_token_hashed<H: Digest>(&self, mut hasher: H) -> String {
         hasher.update(self.long_token.clone());
         hex::encode(hasher.finalize())
     }
@@ -142,10 +141,6 @@ impl PrefixedApiKey {
     pub fn as_string(&self) -> String {
         format!("{}_{}_{}", self.prefix, self.short_token, self.long_token)
     }
-
-    pub fn check_long_token(&self, hashed_long_token: &str) -> bool {
-        self.long_token_hashed() == hashed_long_token.to_owned().to_lowercase()
-    }
 }
 
 impl TryInto<PrefixedApiKey> for &str {
@@ -165,6 +160,7 @@ impl fmt::Display for PrefixedApiKey {
 
 #[cfg(test)]
 mod tests {
+    use sha2::{Digest, Sha256};
     use rand::rngs::OsRng;
 
     use crate::{GeneratorOptions, PrefixedApiKey, PrefixedApiKeyError, PrefixedApiKeyGenerator};
@@ -220,7 +216,8 @@ mod tests {
         let hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
 
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
-        assert!(pak.check_long_token(hash));
+        let hasher = Sha256::new();
+        assert_eq!(pak.long_token_hashed(hasher), hash);
     }
 
     #[test]
