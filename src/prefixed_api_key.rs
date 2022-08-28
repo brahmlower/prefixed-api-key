@@ -15,6 +15,10 @@ impl fmt::Display for PrefixedApiKeyError {
     }
 }
 
+/// A struct representing the api token generated for, and provided to,
+/// the user. An instance of this struct can be instantiated from a string
+/// provided by the user for further validation, or it can be instantiated
+/// via the `new` method while generating a new key to be given to the user.
 #[derive(Debug)]
 pub struct PrefixedApiKey {
     prefix: String,
@@ -23,6 +27,9 @@ pub struct PrefixedApiKey {
 }
 
 impl PrefixedApiKey {
+    /// Constructs a new instance of the struct. This is just a wrapper around
+    /// directly instantiating the struct, and makes no assertions or assumptions
+    /// about the values provided.
     pub fn new(prefix: String, short_token: String, long_token: String) -> PrefixedApiKey {
         PrefixedApiKey {
             prefix,
@@ -31,24 +38,32 @@ impl PrefixedApiKey {
         }
     }
 
+    /// Getter method for accessing the keys prefix
     pub fn prefix(&self) -> &str {
         &self.prefix
     }
 
+    /// Getter method for accessing the keys short token
     pub fn short_token(&self) -> &str {
         &self.short_token
     }
 
+    /// Getter method for accessing the keys secret long token
     pub fn long_token(&self) -> &str {
         &self.long_token
     }
 
-    /// Hashes the long token using the provided hashing algorithm
+    /// Gets the hashed form of the keys secret long token, using the hashing
+    /// algorithm provided as `hasher`. This resets the digest instance while
+    /// finalizing so it may be reused afterward.
     pub fn long_token_hashed<H: Digest + FixedOutputReset>(&self, hasher: &mut H) -> String {
         Digest::update(hasher, self.long_token.clone());
         hex::encode(hasher.finalize_reset())
     }
 
+    /// Instantiates the struct from the string form of the api token. This
+    /// validates the string has the expected number of parts (deliniated by '_'),
+    /// but otherwise makes no assertions or assumptions about the values.
     pub fn from_string(pak_string: &str) -> Result<PrefixedApiKey, PrefixedApiKeyError> {
         let parts: Vec<&str> = pak_string.split('_').collect();
 
@@ -88,7 +103,7 @@ impl fmt::Display for PrefixedApiKey {
 mod tests {
     use sha2::{Digest, Sha256};
 
-    use crate::{PrefixedApiKey, PrefixedApiKeyError};
+    use crate::prefixed_api_key::{PrefixedApiKey, PrefixedApiKeyError};
 
     #[test]
     fn as_string_is_expected() {

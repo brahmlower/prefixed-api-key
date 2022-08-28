@@ -5,4 +5,4 @@ pub use prefixed_api_key::PrefixedApiKeyError;
 
 mod controller;
 pub use controller::GeneratorOptions;
-pub use controller::PrefixedApiKeyGenerator;
+pub use controller::PrefixedApiKeyController;
