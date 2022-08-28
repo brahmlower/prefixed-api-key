@@ -1,5 +1,5 @@
 use rand::RngCore;
-use digest::Digest;
+use digest::{Digest, FixedOutputReset};
 use std::{error::Error, fmt};
 
 #[derive(Debug)]
@@ -37,15 +37,21 @@ impl Default for GeneratorOptions {
 }
 
 #[derive(Debug)]
-pub struct PrefixedApiKeyGenerator<'a, R: RngCore> {
+pub struct PrefixedApiKeyGenerator<'a, R: RngCore, H: Digest + FixedOutputReset> {
     prefix: String,
     rng_source: &'a mut R,
+    hasher: H,
     options: GeneratorOptions,
 }
 
-impl<'a, R: RngCore> PrefixedApiKeyGenerator<'a, R> {
-    pub fn new(prefix: String, rng_source: &'a mut R, options: GeneratorOptions) -> PrefixedApiKeyGenerator<R> {
-        PrefixedApiKeyGenerator { prefix, rng_source, options }
+impl<'a, R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyGenerator<'a, R, H> {
+    pub fn new(prefix: String, rng_source: &'a mut R, hasher: H, options: GeneratorOptions) -> PrefixedApiKeyGenerator<R, H> {
+        PrefixedApiKeyGenerator {
+            prefix,
+            rng_source,
+            hasher,
+            options
+        }
     }
 
     fn get_random_bytes(&mut self, length: usize) -> Vec<u8> {
@@ -73,6 +79,10 @@ impl<'a, R: RngCore> PrefixedApiKeyGenerator<'a, R> {
         }
         let long_token = self.generate_token(self.options.long_token_length);
         PrefixedApiKey::new(self.prefix.to_owned(), short_token, long_token)
+    }
+
+    pub fn long_token_hashed(&mut self, pak: PrefixedApiKey) -> String {
+        pak.long_token_hashed(&mut self.hasher)
     }
 }
 
@@ -118,9 +128,9 @@ impl PrefixedApiKey {
     }
 
     /// Hashes the long token using the provided hashing algorithm
-    pub fn long_token_hashed<H: Digest>(&self, mut hasher: H) -> String {
-        hasher.update(self.long_token.clone());
-        hex::encode(hasher.finalize())
+    pub fn long_token_hashed<H: Digest + FixedOutputReset>(&self, hasher: &mut H) -> String {
+        Digest::update(hasher, self.long_token.clone());
+        hex::encode(hasher.finalize_reset())
     }
 
     pub fn from_string(pak_string: &str) -> Result<PrefixedApiKey, PrefixedApiKeyError> {
@@ -216,8 +226,8 @@ mod tests {
         let hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
 
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
-        let hasher = Sha256::new();
-        assert_eq!(pak.long_token_hashed(hasher), hash);
+        let mut hasher = Sha256::new();
+        assert_eq!(pak.long_token_hashed(&mut hasher), hash);
     }
 
     #[test]
@@ -225,7 +235,12 @@ mod tests {
         let prefix = "mycompany".to_owned();
         let mut rng_source = OsRng;
         let gen_options = GeneratorOptions::default();
-        let mut generator = PrefixedApiKeyGenerator::new(prefix, &mut rng_source, gen_options);
+        let mut generator = PrefixedApiKeyGenerator::new(
+            prefix,
+            &mut rng_source,
+            Sha256::new(),
+            gen_options
+        );
         let token_string = generator.new_key().as_string();
         let new_inst = PrefixedApiKey::from_string(&token_string);
         assert_eq!(new_inst.is_ok(), true);
@@ -242,8 +257,56 @@ mod tests {
             .short_token_prefix(Some(short_prefix.clone()));
         let prefix = "mycompany".to_owned();
         let mut rng_source = OsRng;
-        let mut generator = PrefixedApiKeyGenerator::new(prefix, &mut rng_source, gen_options);
+        let mut generator = PrefixedApiKeyGenerator::new(
+            prefix,
+            &mut rng_source,
+            Sha256::new(),
+            gen_options
+        );
         let pak_short_token = generator.new_key().short_token().to_owned();
         assert_eq!(pak_short_token, short_prefix);
+    }
+
+    #[test]
+    fn check_long_token_via_generator() {
+        let pak_string = "mycompany_CEUsS4psCmc_BddpcwWyCT3EkDjHSSTRaSK1dxtuQgbjb";
+        let hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
+
+        let pak: PrefixedApiKey = pak_string.try_into().unwrap();
+        let hasher = Sha256::new();
+
+        let prefix = "mycompany".to_owned();
+        let mut rng_source = OsRng;
+        let mut generator = PrefixedApiKeyGenerator::new(
+            prefix,
+            &mut rng_source,
+            hasher,
+            GeneratorOptions::default()
+        );
+
+        assert_eq!(generator.long_token_hashed(pak), hash);
+    }
+
+    #[test]
+    fn generator_hasher_resets_after_hashing() {
+        let pak1_string = "mycompany_CEUsS4psCmc_BddpcwWyCT3EkDjHSSTRaSK1dxtuQgbjb";
+        let pak1_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
+        let pak1: PrefixedApiKey = pak1_string.try_into().unwrap();
+
+        let pak2_string = "mycompany_CEUsS4psCmc_BddpcwWyCT3EkDjHSSTRaSK1dxtuQgbjb";
+        let pak2_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
+        let pak2: PrefixedApiKey = pak2_string.try_into().unwrap();
+
+        let hasher = Sha256::new();
+        let mut rng_source = OsRng;
+        let mut generator = PrefixedApiKeyGenerator::new(
+            "mycompany".to_owned(),
+            &mut rng_source,
+            hasher,
+            GeneratorOptions::default()
+        );
+
+        assert_eq!(generator.long_token_hashed(pak1), pak1_hash);
+        assert_eq!(generator.long_token_hashed(pak2), pak2_hash);
     }
 }
