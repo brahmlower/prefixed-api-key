@@ -1,5 +1,5 @@
-use rand::RngCore;
 use digest::{Digest, FixedOutputReset};
+use rand::RngCore;
 use std::{error::Error, fmt};
 
 #[derive(Debug)]
@@ -45,12 +45,17 @@ pub struct PrefixedApiKeyGenerator<R: RngCore, H: Digest + FixedOutputReset> {
 }
 
 impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyGenerator<R, H> {
-    pub fn new(prefix: String, rng_source: R, hasher: H, options: GeneratorOptions) -> PrefixedApiKeyGenerator<R, H> {
+    pub fn new(
+        prefix: String,
+        rng_source: R,
+        hasher: H,
+        options: GeneratorOptions,
+    ) -> PrefixedApiKeyGenerator<R, H> {
         PrefixedApiKeyGenerator {
             prefix,
             rng_source,
             hasher,
-            options
+            options,
         }
     }
 
@@ -170,8 +175,8 @@ impl fmt::Display for PrefixedApiKey {
 
 #[cfg(test)]
 mod tests {
-    use sha2::{Digest, Sha256};
     use rand::rngs::OsRng;
+    use sha2::{Digest, Sha256};
 
     use crate::{GeneratorOptions, PrefixedApiKey, PrefixedApiKeyError, PrefixedApiKeyGenerator};
 
@@ -234,12 +239,7 @@ mod tests {
     fn generator() {
         let prefix = "mycompany".to_owned();
         let gen_options = GeneratorOptions::default();
-        let mut generator = PrefixedApiKeyGenerator::new(
-            prefix,
-            OsRng,
-            Sha256::new(),
-            gen_options
-        );
+        let mut generator = PrefixedApiKeyGenerator::new(prefix, OsRng, Sha256::new(), gen_options);
         let token_string = generator.new_key().as_string();
         let new_inst = PrefixedApiKey::from_string(&token_string);
         assert_eq!(new_inst.is_ok(), true);
@@ -254,12 +254,8 @@ mod tests {
         let gen_options = GeneratorOptions::default()
             .short_token_length(short_length)
             .short_token_prefix(Some(short_prefix.clone()));
-        let mut generator = PrefixedApiKeyGenerator::new(
-            "mycompany".to_owned(),
-            OsRng,
-            Sha256::new(),
-            gen_options
-        );
+        let mut generator =
+            PrefixedApiKeyGenerator::new("mycompany".to_owned(), OsRng, Sha256::new(), gen_options);
         let pak_short_token = generator.new_key().short_token().to_owned();
         assert_eq!(pak_short_token, short_prefix);
     }
@@ -275,7 +271,7 @@ mod tests {
             "mycompany".to_owned(),
             OsRng,
             Sha256::new(),
-            GeneratorOptions::default()
+            GeneratorOptions::default(),
         );
 
         assert_eq!(generator.long_token_hashed(pak), hash);
@@ -295,7 +291,7 @@ mod tests {
             "mycompany".to_owned(),
             OsRng,
             Sha256::new(),
-            GeneratorOptions::default()
+            GeneratorOptions::default(),
         );
 
         assert_eq!(generator.long_token_hashed(pak1), pak1_hash);
