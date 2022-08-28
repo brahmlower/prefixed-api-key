@@ -1,4 +1,3 @@
-use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::{Digest, Sha256};
 use std::{error::Error, fmt};
@@ -38,31 +37,32 @@ impl Default for GeneratorOptions {
 }
 
 #[derive(Debug)]
-pub struct PrefixedApiKeyGenerator {
+pub struct PrefixedApiKeyGenerator<'a, R: RngCore> {
     prefix: String,
+    rng_source: &'a mut R,
     options: GeneratorOptions,
 }
 
-impl PrefixedApiKeyGenerator {
-    pub fn new(prefix: String, options: GeneratorOptions) -> PrefixedApiKeyGenerator {
-        PrefixedApiKeyGenerator { prefix, options }
+impl<'a, R: RngCore> PrefixedApiKeyGenerator<'a, R> {
+    pub fn new(prefix: String, rng_source: &'a mut R, options: GeneratorOptions) -> PrefixedApiKeyGenerator<R> {
+        PrefixedApiKeyGenerator { prefix, rng_source, options }
     }
 
-    // TODO: This should support a configurable source for the random
-    // number generator. The OsRng is okay for now, but errors could arise
-    // https://docs.rs/rand/latest/rand/rngs/struct.OsRng.html
-    fn get_random_bytes(&self, length: usize) -> Vec<u8> {
+    fn get_random_bytes(&mut self, length: usize) -> Vec<u8> {
         let mut random_bytes = vec![0u8; length];
-        OsRng.fill_bytes(&mut random_bytes);
+        // TODO: need to use try_fill_bytes to account for problems with the
+        // underlying rng source. typically this will be fine, but the RngCore
+        // docs say errors can arrise, and will cause a panic if you use fill_bytes
+        self.rng_source.fill_bytes(&mut random_bytes);
         random_bytes
     }
 
-    fn generate_token(&self, length: usize) -> String {
+    fn generate_token(&mut self, length: usize) -> String {
         let bytes = self.get_random_bytes(length);
         bs58::encode(bytes).into_string()
     }
 
-    pub fn new_key(&self) -> PrefixedApiKey {
+    pub fn new_key(&mut self) -> PrefixedApiKey {
         let mut short_token = self.generate_token(self.options.short_token_length);
         if self.options.short_token_prefix.is_some() {
             short_token = (self.options.short_token_prefix.as_ref().unwrap().to_owned()
@@ -158,12 +158,15 @@ impl TryInto<PrefixedApiKey> for &str {
 
 impl fmt::Display for PrefixedApiKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Displays the key without showing the secret long token
         write!(f, "{}_{}_***", self.prefix(), self.short_token())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use rand::rngs::OsRng;
+
     use crate::{GeneratorOptions, PrefixedApiKey, PrefixedApiKeyError, PrefixedApiKeyGenerator};
 
     #[test]
@@ -223,8 +226,9 @@ mod tests {
     #[test]
     fn generator() {
         let prefix = "mycompany".to_owned();
+        let mut rng_source = OsRng;
         let gen_options = GeneratorOptions::default();
-        let generator = PrefixedApiKeyGenerator::new(prefix, gen_options);
+        let mut generator = PrefixedApiKeyGenerator::new(prefix, &mut rng_source, gen_options);
         let token_string = generator.new_key().as_string();
         let new_inst = PrefixedApiKey::from_string(&token_string);
         assert_eq!(new_inst.is_ok(), true);
@@ -240,7 +244,8 @@ mod tests {
             .short_token_length(short_length)
             .short_token_prefix(Some(short_prefix.clone()));
         let prefix = "mycompany".to_owned();
-        let generator = PrefixedApiKeyGenerator::new(prefix, gen_options);
+        let mut rng_source = OsRng;
+        let mut generator = PrefixedApiKeyGenerator::new(prefix, &mut rng_source, gen_options);
         let pak_short_token = generator.new_key().short_token().to_owned();
         assert_eq!(pak_short_token, short_prefix);
     }
