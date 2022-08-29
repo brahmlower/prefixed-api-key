@@ -1,4 +1,3 @@
-
 mod prefixed_api_key;
 pub use crate::prefixed_api_key::PrefixedApiKey;
 pub use crate::prefixed_api_key::PrefixedApiKeyError;

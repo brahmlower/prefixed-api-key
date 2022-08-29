@@ -1,7 +1,7 @@
 use digest::{Digest, FixedOutputReset};
+use std::error::Error;
 use std::fmt;
 use std::fmt::Debug;
-use std::error::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PrefixedApiKeyError {
@@ -86,10 +86,10 @@ impl PrefixedApiKey {
 impl Debug for PrefixedApiKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PrefixedApiKey")
-         .field("prefix", &self.prefix)
-         .field("short_token", &self.short_token)
-         .field("long_token", &"***")
-         .finish()
+            .field("prefix", &self.prefix)
+            .field("short_token", &self.short_token)
+            .field("long_token", &"***")
+            .finish()
     }
 }
 

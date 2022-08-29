@@ -142,7 +142,8 @@ mod tests {
     fn generator() {
         let prefix = "mycompany".to_owned();
         let gen_options = GeneratorOptions::default();
-        let mut generator = PrefixedApiKeyController::new(prefix, OsRng, Sha256::new(), gen_options);
+        let mut generator =
+            PrefixedApiKeyController::new(prefix, OsRng, Sha256::new(), gen_options);
         let token_string = generator.generate_key().to_string();
         let new_inst = PrefixedApiKey::from_string(&token_string);
         assert_eq!(new_inst.is_ok(), true);
@@ -157,8 +158,12 @@ mod tests {
         let gen_options = GeneratorOptions::default()
             .short_token_length(short_length)
             .short_token_prefix(Some(short_prefix.clone()));
-        let mut generator =
-            PrefixedApiKeyController::new("mycompany".to_owned(), OsRng, Sha256::new(), gen_options);
+        let mut generator = PrefixedApiKeyController::new(
+            "mycompany".to_owned(),
+            OsRng,
+            Sha256::new(),
+            gen_options,
+        );
         let pak_short_token = generator.generate_key().short_token().to_owned();
         assert_eq!(pak_short_token, short_prefix);
     }
