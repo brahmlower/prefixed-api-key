@@ -172,6 +172,18 @@ impl<R: RngCore> ControllerBuilder<R, Sha224> {
 }
 
 #[cfg(feature = "sha2")]
+impl ControllerBuilder<OsRng, Sha256> {
+    /// Helper function for configuring the Controller with a new [Sha256](sha2::Sha256) instance
+    ///
+    /// Requires the "sha2" feature
+    pub fn seam_defaults(self) -> Self {
+        self.digest(Sha256::new())
+            .rng_osrng()
+            .default_lengths()
+    }
+}
+
+#[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha256> {
     /// Helper function for configuring the Controller with a new [Sha256](sha2::Sha256) instance
     ///
@@ -411,6 +423,18 @@ mod controller_builder_sha2_tests {
             .digest_sha512_256()
             .short_token_prefix(None)
             .default_lengths()
+            .finalize();
+        assert!(controller_result.is_ok());
+        assert!(
+            controller_generates_matching_hash(controller_result.unwrap())
+        );
+    }
+
+    #[test]
+    fn ok_with_seam_deafults() {
+        let controller_result = ControllerBuilder::new()
+            .prefix("mycompany".to_owned())
+            .seam_defaults()
             .finalize();
         assert!(controller_result.is_ok());
         assert!(
