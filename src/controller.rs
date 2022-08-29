@@ -1,6 +1,6 @@
 use crypto::util::fixed_time_eq;
 use digest::{Digest, FixedOutputReset};
-use rand::RngCore;
+use rand::{RngCore, rngs::{OsRng, ThreadRng, StdRng}, SeedableRng};
 
 #[cfg(feature = "sha2")]
 use sha2::{Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};
@@ -111,6 +111,56 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
     }
 }
 
+impl<D: Digest + FixedOutputReset> ControllerBuilder<OsRng, D> {
+    /// Helper function for configuring the Controller with an instance of [OsRng](rand::rngs::OsRng).
+    ///
+    /// <p style="background:rgba(255,181,77,0.16);padding:0.75em;">
+    /// <strong>Warning:</strong>
+    /// The RNG you pick is an important decision. Please familiarize yourself with the
+    /// <a href="https://docs.rs/rand/latest/rand/rngs/index.html#background-random-number-generators-rngs">types of RNGs</a>,
+    /// and then read the descriptions of each of
+    /// <a href="https://docs.rs/rand/latest/rand/rngs/index.html#our-generators">the RNGs provided in the rand crate</a>
+    /// to determine the most appropriate RNG for your use case.
+    /// </p>
+    pub fn rng_osrng(self) -> Self {
+        self.rng(OsRng)
+    }
+}
+
+impl<D: Digest + FixedOutputReset> ControllerBuilder<ThreadRng, D> {
+    /// Helper function for configuring the Controller with an instance of [ThreadRng](rand::rngs::ThreadRng) created
+    /// by calling [default](rand::rngs::ThreadRng::default).
+    ///
+    /// <p style="background:rgba(255,181,77,0.16);padding:0.75em;">
+    /// <strong>Warning:</strong>
+    /// The RNG you pick is an important decision. Please familiarize yourself with the
+    /// <a href="https://docs.rs/rand/latest/rand/rngs/index.html#background-random-number-generators-rngs">types of RNGs</a>,
+    /// and then read the descriptions of each of
+    /// <a href="https://docs.rs/rand/latest/rand/rngs/index.html#our-generators">the RNGs provided in the rand crate</a>
+    /// to determine the most appropriate RNG for your use case.
+    /// </p>
+    pub fn rng_threadrng(self) -> Self {
+        self.rng(ThreadRng::default())
+    }
+}
+
+impl<D: Digest + FixedOutputReset> ControllerBuilder<StdRng, D> {
+    /// Helper function for configuring the Controller with an instance of [StdRng](rand::rngs::StdRng) created
+    /// by calling [from_entropy](rand::rngs::StdRng::from_entropy).
+    ///
+    /// <p style="background:rgba(255,181,77,0.16);padding:0.75em;">
+    /// <strong>Warning:</strong>
+    /// The RNG you pick is an important decision. Please familiarize yourself with the
+    /// <a href="https://docs.rs/rand/latest/rand/rngs/index.html#background-random-number-generators-rngs">types of RNGs</a>,
+    /// and then read the descriptions of each of
+    /// <a href="https://docs.rs/rand/latest/rand/rngs/index.html#our-generators">the RNGs provided in the rand crate</a>
+    /// to determine the most appropriate RNG for your use case.
+    /// </p>
+    pub fn rng_stdrng(self) -> Self {
+        self.rng(StdRng::from_entropy())
+    }
+}
+
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha224> {
     /// Helper function for configuring the Controller with a new [Sha224](sha2::Sha224) instance
@@ -187,7 +237,7 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_all_values_provided() {
-        let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest(Sha256::new())
@@ -201,7 +251,7 @@ mod controller_builder_tests {
     #[test]
     fn ok_with_default_short_token_prefix() {
         // We just omit setting the short_token_prefix to use the default None value
-        let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest(Sha256::new())
@@ -213,9 +263,45 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_default_lengths() {
-        let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
+            .digest(Sha256::new())
+            .short_token_prefix(None)
+            .default_lengths()
+            .finalize();
+        assert!(controller_result.is_ok())
+    }
+
+    #[test]
+    fn ok_with_rng_osrng() {
+        let controller_result = ControllerBuilder::new()
+            .prefix("mycompany".to_owned())
+            .rng_osrng()
+            .digest(Sha256::new())
+            .short_token_prefix(None)
+            .default_lengths()
+            .finalize();
+        assert!(controller_result.is_ok())
+    }
+
+    #[test]
+    fn ok_with_rng_threadrng() {
+        let controller_result = ControllerBuilder::new()
+            .prefix("mycompany".to_owned())
+            .rng_threadrng()
+            .digest(Sha256::new())
+            .short_token_prefix(None)
+            .default_lengths()
+            .finalize();
+        assert!(controller_result.is_ok())
+    }
+
+    #[test]
+    fn ok_with_rng_stdrng() {
+        let controller_result = ControllerBuilder::new()
+            .prefix("mycompany".to_owned())
+            .rng_stdrng()
             .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
@@ -244,7 +330,7 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha224() {
-        let controller_result = ControllerBuilder::<OsRng, _>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest_sha256()
@@ -259,7 +345,7 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha256() {
-        let controller_result = ControllerBuilder::<OsRng, _>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest_sha256()
@@ -274,7 +360,7 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha384() {
-        let controller_result = ControllerBuilder::<OsRng, _>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest_sha384()
@@ -289,7 +375,7 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha512() {
-        let controller_result = ControllerBuilder::<OsRng, _>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest_sha512()
@@ -304,7 +390,7 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha512_224() {
-        let controller_result = ControllerBuilder::<OsRng, _>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest_sha512_224()
@@ -319,7 +405,7 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha512_256() {
-        let controller_result = ControllerBuilder::<OsRng, _>::new()
+        let controller_result = ControllerBuilder::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
             .digest_sha512_256()
