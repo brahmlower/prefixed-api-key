@@ -8,7 +8,7 @@ documentation = "https://docs.rs/prefixed-api-key"
 license = "MIT"
 readme = "readme.md"
 version = "0.1.0-beta.1"
-edition = "2021"
+edition = "2018"
 
 [features]
 sha2 = ["dep:sha2"]
