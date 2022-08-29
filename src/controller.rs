@@ -1,6 +1,9 @@
 use crypto::util::fixed_time_eq;
 use digest::{Digest, FixedOutputReset};
-use rand::{RngCore, rngs::{OsRng, ThreadRng, StdRng}, SeedableRng};
+use rand::{
+    rngs::{OsRng, StdRng, ThreadRng},
+    RngCore, SeedableRng,
+};
 
 #[cfg(feature = "sha2")]
 use sha2::{Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};
@@ -64,8 +67,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
     /// Helper for setting the default short and long token length based on the
     /// defaults set in the [typescript version Prefixed API Key module](https://github.com/seamapi/prefixed-api-key/blob/main/src/index.ts#L19-L20).
     pub fn default_lengths(self) -> Self {
-        self.short_token_length(8)
-            .long_token_length(24)
+        self.short_token_length(8).long_token_length(24)
     }
 
     /// Sets the token prefix. This should be the name of your company or organization.
@@ -177,9 +179,7 @@ impl ControllerBuilder<OsRng, Sha256> {
     ///
     /// Requires the "sha2" feature
     pub fn seam_defaults(self) -> Self {
-        self.digest(Sha256::new())
-            .rng_osrng()
-            .default_lengths()
+        self.digest(Sha256::new()).rng_osrng().default_lengths()
     }
 }
 
@@ -233,6 +233,11 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
     }
 }
 
+impl<R: RngCore, D: Digest + FixedOutputReset> Default for ControllerBuilder<R, D> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod controller_builder_tests {
@@ -326,15 +331,17 @@ mod controller_builder_tests {
 #[cfg(test)]
 mod controller_builder_sha2_tests {
     use digest::{Digest, FixedOutputReset};
-    use rand::RngCore;
     use rand::rngs::OsRng;
+    use rand::RngCore;
 
     use super::{ControllerBuilder, PrefixedApiKeyController};
 
-    fn controller_generates_matching_hash<R, D>(mut controller: PrefixedApiKeyController<R, D>) -> bool
+    fn controller_generates_matching_hash<R, D>(
+        mut controller: PrefixedApiKeyController<R, D>,
+    ) -> bool
     where
         R: RngCore,
-        D: Digest + FixedOutputReset
+        D: Digest + FixedOutputReset,
     {
         let (pak, hash) = controller.generate_key_and_hash();
         controller.check_hash(&pak, hash)
@@ -350,9 +357,9 @@ mod controller_builder_sha2_tests {
             .default_lengths()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 
     #[test]
@@ -365,9 +372,9 @@ mod controller_builder_sha2_tests {
             .default_lengths()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 
     #[test]
@@ -380,9 +387,9 @@ mod controller_builder_sha2_tests {
             .default_lengths()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 
     #[test]
@@ -395,9 +402,9 @@ mod controller_builder_sha2_tests {
             .default_lengths()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 
     #[test]
@@ -410,9 +417,9 @@ mod controller_builder_sha2_tests {
             .default_lengths()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 
     #[test]
@@ -425,9 +432,9 @@ mod controller_builder_sha2_tests {
             .default_lengths()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 
     #[test]
@@ -437,12 +444,11 @@ mod controller_builder_sha2_tests {
             .seam_defaults()
             .finalize();
         assert!(controller_result.is_ok());
-        assert!(
-            controller_generates_matching_hash(controller_result.unwrap())
-        );
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
     }
 }
-
 
 #[derive(Debug)]
 pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
@@ -627,7 +633,7 @@ mod controller_tests {
             Sha256::new(),
             None,
             8,
-            24
+            24,
         );
 
         assert_eq!(generator.long_token_hashed(&pak), hash);
