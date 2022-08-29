@@ -104,8 +104,13 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
         PrefixedApiKey::new(self.prefix.to_owned(), short_token, long_token)
     }
 
-    // TODO: Create a generate_key_hash function which generates a new pak and
-    // also returns the hash of the secret long token
+    // Generates a new key using the `generate_key` function, but also calculates and
+    // returns the hash of the long token.
+    pub fn generate_key_and_hash(&mut self) -> (PrefixedApiKey, String) {
+        let pak = self.generate_key();
+        let hash = self.long_token_hashed(&pak);
+        (pak, hash)
+    }
 
     /// Hashes the long token of the provided PrefixedApiKey using the hashing
     /// algorithm configured on the controller. The hashing instance gets
@@ -156,6 +161,18 @@ mod tests {
             PrefixedApiKeyController::new("mycompany".to_owned(), OsRng, Sha256::new(), gen_options);
         let pak_short_token = generator.generate_key().short_token().to_owned();
         assert_eq!(pak_short_token, short_prefix);
+    }
+
+    #[test]
+    fn generate_key_and_hash() {
+        let mut generator = PrefixedApiKeyController::new(
+            "mycompany".to_owned(),
+            OsRng,
+            Sha256::new(),
+            GeneratorOptions::default(),
+        );
+        let (pak, hash) = generator.generate_key_and_hash();
+        assert!(generator.check_hash(&pak, hash))
     }
 
     #[test]
