@@ -1,5 +1,4 @@
 use digest::{Digest, FixedOutputReset};
-use std::convert::TryInto;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Debug;
@@ -111,7 +110,6 @@ impl TryInto<PrefixedApiKey> for &str {
 #[cfg(test)]
 mod tests {
     use sha2::{Digest, Sha256};
-    use std::convert::TryInto;
 
     use crate::prefixed_api_key::{PrefixedApiKey, PrefixedApiKeyError};
 

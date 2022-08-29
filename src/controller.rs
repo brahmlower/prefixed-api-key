@@ -558,7 +558,6 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
 mod controller_tests {
     use rand::rngs::OsRng;
     use sha2::{Digest, Sha256};
-    use std::convert::TryInto;
 
     use crate::controller::PrefixedApiKeyController;
     use crate::PrefixedApiKey;
