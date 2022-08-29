@@ -74,7 +74,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
     /// Generates a random token for part of the api key. This can be used for generating
     /// both the secret long key, and the shorter plaintext key. The random values are
     /// base58 encoded, which is a key feature/requirement of the library.
-    fn generate_token(&mut self, length: usize) -> String {
+    fn get_random_token(&mut self, length: usize) -> String {
         let bytes = self.get_random_bytes(length);
         bs58::encode(bytes).into_string()
     }
@@ -85,7 +85,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
     /// this function.
     pub fn generate_key(&mut self) -> PrefixedApiKey {
         // generate the short token
-        let mut short_token = self.generate_token(self.options.short_token_length);
+        let mut short_token = self.get_random_token(self.options.short_token_length);
 
         // If the short token prefix is configured, concat it and the generated string and
         // drop any characters beyond the configured short token length
@@ -98,7 +98,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
         }
 
         // Generate the secret long token
-        let long_token = self.generate_token(self.options.long_token_length);
+        let long_token = self.get_random_token(self.options.long_token_length);
 
         // Construct and return the new pak
         PrefixedApiKey::new(self.prefix.to_owned(), short_token, long_token)
