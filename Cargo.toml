@@ -11,6 +11,7 @@ edition = "2021"
 
 [features]
 sha2 = ["dep:sha2"]
+all = ["sha2"]
 
 [dependencies]
 digest = "0.10.3"

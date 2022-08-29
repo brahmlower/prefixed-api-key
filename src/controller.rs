@@ -28,6 +28,8 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
         }
     }
 
+    /// Finishes building the controller, returning Err if any necessary configs are
+    /// missing.
     pub fn finalize(self) -> Result<PrefixedApiKeyController<R, H>, &'static str> {
         if self.prefix.is_none() {
             return Err("Expected prefix to be set, but wasn't");
@@ -59,36 +61,50 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
         ))
     }
 
+    /// Helper for setting the default short and long token length based on the
+    /// defaults set in the [typescript version Prefixed API Key module](https://github.com/seamapi/prefixed-api-key/blob/main/src/index.ts#L19-L20).
     pub fn default_lengths(self) -> Self {
         self.short_token_length(8)
             .long_token_length(24)
     }
 
+    /// Sets the token prefix. This should be the name of your company or organization.
     pub fn prefix(mut self, prefix: String) -> Self {
         self.prefix = Some(prefix);
         self
     }
 
+    /// An instance of a struct that implements RngCore, which will be used for
+    /// generating bytes used in the short and long tokens of the key.
     pub fn rng_source(mut self, rng_source: R) -> Self {
         self.rng_source = Some(rng_source);
         self
     }
 
+    /// An instance of a struct that implements Digest, which will be used for
+    /// hashing the secret token of new keys.
     pub fn hasher(mut self, hasher: H) -> Self {
         self.hasher = Some(hasher);
         self
     }
 
+    /// An optional prefix for the short tokens. The length of this value should
+    /// be less than the value you set for the `short_token_length`, and should
+    /// leave enough space to avoid collisions with other short tokens.
+    ///
+    /// Default: None
     pub fn short_token_prefix(mut self, short_token_prefix: Option<String>) -> Self {
         self.short_token_prefix = short_token_prefix;
         self
     }
 
+    /// The length of the short token
     pub fn short_token_length(mut self, short_token_length: usize) -> Self {
         self.short_token_length = Some(short_token_length);
         self
     }
 
+    /// The length of the secret long token
     pub fn long_token_length(mut self, long_token_length: usize) -> Self {
         self.long_token_length = Some(long_token_length);
         self
@@ -97,6 +113,9 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
 
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha224> {
+    /// Helper function for configuring the Controller with a new [Sha224](sha2::Sha224) instance
+    ///
+    /// Requires the "sha2" feature
     pub fn hasher_sha224(self) -> Self {
         self.hasher(Sha224::new())
     }
@@ -104,6 +123,9 @@ impl<R: RngCore> ControllerBuilder<R, Sha224> {
 
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha256> {
+    /// Helper function for configuring the Controller with a new [Sha256](sha2::Sha256) instance
+    ///
+    /// Requires the "sha2" feature
     pub fn hasher_sha256(self) -> Self {
         self.hasher(Sha256::new())
     }
@@ -111,6 +133,9 @@ impl<R: RngCore> ControllerBuilder<R, Sha256> {
 
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha384> {
+    /// Helper function for configuring the Controller with a new [Sha384](sha2::Sha384) instance
+    ///
+    /// Requires the "sha2" feature
     pub fn hasher_sha384(self) -> Self {
         self.hasher(Sha384::new())
     }
@@ -118,6 +143,9 @@ impl<R: RngCore> ControllerBuilder<R, Sha384> {
 
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha512> {
+    /// Helper function for configuring the Controller with a new [Sha512](sha2::Sha512) instance
+    ///
+    /// Requires the "sha2" feature
     pub fn hasher_sha512(self) -> Self {
         self.hasher(Sha512::new())
     }
@@ -125,6 +153,9 @@ impl<R: RngCore> ControllerBuilder<R, Sha512> {
 
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha512_224> {
+    /// Helper function for configuring the Controller with a new [Sha512_224](sha2::Sha512_224) instance
+    ///
+    /// Requires the "sha2" feature
     pub fn hasher_sha512_224(self) -> Self {
         self.hasher(Sha512_224::new())
     }
@@ -132,6 +163,9 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_224> {
 
 #[cfg(feature = "sha2")]
 impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
+    /// Helper function for configuring the Controller with a new [Sha512_256](sha2::Sha512_256) instance
+    ///
+    /// Requires the "sha2" feature
     pub fn hasher_sha512_256(self) -> Self {
         self.hasher(Sha512_256::new())
     }
@@ -300,7 +334,6 @@ mod controller_builder_sha2_tests {
 }
 
 
-
 #[derive(Debug)]
 pub struct PrefixedApiKeyController<R: RngCore, H: Digest + FixedOutputReset> {
     prefix: String,
@@ -330,6 +363,8 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
         }
     }
 
+    /// Creates an instance of [ControllerBuilder] to enable building the
+    /// controller via the builder pattern
     pub fn configure() -> ControllerBuilder<R, H> {
         ControllerBuilder::new()
     }
@@ -377,8 +412,8 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
         PrefixedApiKey::new(self.prefix.to_owned(), short_token, long_token)
     }
 
-    // Generates a new key using the `generate_key` function, but also calculates and
-    // returns the hash of the long token.
+    /// Generates a new key using the [generate_key](PrefixedApiKeyController::generate_key) function, but also calculates and
+    /// returns the hash of the long token.
     pub fn generate_key_and_hash(&mut self) -> (PrefixedApiKey, String) {
         let pak = self.generate_key();
         let hash = self.long_token_hashed(&pak);
@@ -387,7 +422,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
 
     /// Hashes the long token of the provided PrefixedApiKey using the hashing
     /// algorithm configured on the controller. The hashing instance gets
-    /// reused each time this is called, which is why the `FixedOutputReset`
+    /// reused each time this is called, which is why the [FixedOutputReset](digest::FixedOutputReset)
     /// trait is required.
     pub fn long_token_hashed(&mut self, pak: &PrefixedApiKey) -> String {
         pak.long_token_hashed(&mut self.hasher)
@@ -395,7 +430,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
 
     /// Secure helper for checking if a given PrefixedApiKey matches a given
     /// long token hash. This uses the hashing algorithm configured on the controller
-    /// and uses the `crypto::util::fixed_time_eq` method of comparing hashes
+    /// and uses the [fixed_time_eq](crypto::util::fixed_time_eq) method of comparing hashes
     /// to avoid possible timing attacks.
     pub fn check_hash(&mut self, pak: &PrefixedApiKey, hash: String) -> bool {
         let pak_hash = self.long_token_hashed(pak);
