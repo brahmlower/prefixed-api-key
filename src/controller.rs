@@ -7,21 +7,21 @@ use sha2::{Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};
 
 use crate::prefixed_api_key::PrefixedApiKey;
 
-pub struct ControllerBuilder<R: RngCore, H: Digest + FixedOutputReset> {
+pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: Option<String>,
     rng_source: Option<R>,
-    hasher: Option<H>,
+    digest: Option<D>,
     short_token_prefix: Option<String>,
     short_token_length: Option<usize>,
     long_token_length: Option<usize>,
 }
 
-impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
-    pub fn new() -> ControllerBuilder<R, H> {
+impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
+    pub fn new() -> ControllerBuilder<R, D> {
         ControllerBuilder {
             prefix: None,
             rng_source: None,
-            hasher: None,
+            digest: None,
             short_token_prefix: None,
             short_token_length: None,
             long_token_length: None,
@@ -30,7 +30,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
 
     /// Finishes building the controller, returning Err if any necessary configs are
     /// missing.
-    pub fn finalize(self) -> Result<PrefixedApiKeyController<R, H>, &'static str> {
+    pub fn finalize(self) -> Result<PrefixedApiKeyController<R, D>, &'static str> {
         if self.prefix.is_none() {
             return Err("Expected prefix to be set, but wasn't");
         }
@@ -39,8 +39,8 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
             return Err("Expected rng_source to be set, but wasn't");
         }
 
-        if self.hasher.is_none() {
-            return Err("Expected hasher to be set, but wasn't");
+        if self.digest.is_none() {
+            return Err("Expected digest to be set, but wasn't");
         }
 
         if self.short_token_length.is_none() {
@@ -54,7 +54,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
         Ok(PrefixedApiKeyController::new(
             self.prefix.unwrap(),
             self.rng_source.unwrap(),
-            self.hasher.unwrap(),
+            self.digest.unwrap(),
             self.short_token_prefix,
             self.short_token_length.unwrap(),
             self.long_token_length.unwrap(),
@@ -83,8 +83,8 @@ impl<R: RngCore, H: Digest + FixedOutputReset> ControllerBuilder<R, H> {
 
     /// An instance of a struct that implements Digest, which will be used for
     /// hashing the secret token of new keys.
-    pub fn hasher(mut self, hasher: H) -> Self {
-        self.hasher = Some(hasher);
+    pub fn digest(mut self, digest: D) -> Self {
+        self.digest = Some(digest);
         self
     }
 
@@ -116,8 +116,8 @@ impl<R: RngCore> ControllerBuilder<R, Sha224> {
     /// Helper function for configuring the Controller with a new [Sha224](sha2::Sha224) instance
     ///
     /// Requires the "sha2" feature
-    pub fn hasher_sha224(self) -> Self {
-        self.hasher(Sha224::new())
+    pub fn digest_sha224(self) -> Self {
+        self.digest(Sha224::new())
     }
 }
 
@@ -126,8 +126,8 @@ impl<R: RngCore> ControllerBuilder<R, Sha256> {
     /// Helper function for configuring the Controller with a new [Sha256](sha2::Sha256) instance
     ///
     /// Requires the "sha2" feature
-    pub fn hasher_sha256(self) -> Self {
-        self.hasher(Sha256::new())
+    pub fn digest_sha256(self) -> Self {
+        self.digest(Sha256::new())
     }
 }
 
@@ -136,8 +136,8 @@ impl<R: RngCore> ControllerBuilder<R, Sha384> {
     /// Helper function for configuring the Controller with a new [Sha384](sha2::Sha384) instance
     ///
     /// Requires the "sha2" feature
-    pub fn hasher_sha384(self) -> Self {
-        self.hasher(Sha384::new())
+    pub fn digest_sha384(self) -> Self {
+        self.digest(Sha384::new())
     }
 }
 
@@ -146,8 +146,8 @@ impl<R: RngCore> ControllerBuilder<R, Sha512> {
     /// Helper function for configuring the Controller with a new [Sha512](sha2::Sha512) instance
     ///
     /// Requires the "sha2" feature
-    pub fn hasher_sha512(self) -> Self {
-        self.hasher(Sha512::new())
+    pub fn digest_sha512(self) -> Self {
+        self.digest(Sha512::new())
     }
 }
 
@@ -156,8 +156,8 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_224> {
     /// Helper function for configuring the Controller with a new [Sha512_224](sha2::Sha512_224) instance
     ///
     /// Requires the "sha2" feature
-    pub fn hasher_sha512_224(self) -> Self {
-        self.hasher(Sha512_224::new())
+    pub fn digest_sha512_224(self) -> Self {
+        self.digest(Sha512_224::new())
     }
 }
 
@@ -166,8 +166,8 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
     /// Helper function for configuring the Controller with a new [Sha512_256](sha2::Sha512_256) instance
     ///
     /// Requires the "sha2" feature
-    pub fn hasher_sha512_256(self) -> Self {
-        self.hasher(Sha512_256::new())
+    pub fn digest_sha512_256(self) -> Self {
+        self.digest(Sha512_256::new())
     }
 }
 
@@ -190,7 +190,7 @@ mod controller_builder_tests {
         let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher(Sha256::new())
+            .digest(Sha256::new())
             .short_token_prefix(None)
             .short_token_length(4)
             .long_token_length(500)
@@ -204,7 +204,7 @@ mod controller_builder_tests {
         let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher(Sha256::new())
+            .digest(Sha256::new())
             .short_token_length(4)
             .long_token_length(500)
             .finalize();
@@ -216,7 +216,7 @@ mod controller_builder_tests {
         let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher(Sha256::new())
+            .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -233,21 +233,21 @@ mod controller_builder_sha2_tests {
 
     use super::{ControllerBuilder, PrefixedApiKeyController};
 
-    fn controller_generates_matching_hash<R, H>(mut controller: PrefixedApiKeyController<R, H>) -> bool
+    fn controller_generates_matching_hash<R, D>(mut controller: PrefixedApiKeyController<R, D>) -> bool
     where
         R: RngCore,
-        H: Digest + FixedOutputReset
+        D: Digest + FixedOutputReset
     {
         let (pak, hash) = controller.generate_key_and_hash();
         controller.check_hash(&pak, hash)
     }
 
     #[test]
-    fn ok_with_hasher_sha224() {
+    fn ok_with_digest_sha224() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher_sha256()
+            .digest_sha256()
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -258,11 +258,11 @@ mod controller_builder_sha2_tests {
     }
 
     #[test]
-    fn ok_with_hasher_sha256() {
+    fn ok_with_digest_sha256() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher_sha256()
+            .digest_sha256()
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -273,11 +273,11 @@ mod controller_builder_sha2_tests {
     }
 
     #[test]
-    fn ok_with_hasher_sha384() {
+    fn ok_with_digest_sha384() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher_sha384()
+            .digest_sha384()
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -288,11 +288,11 @@ mod controller_builder_sha2_tests {
     }
 
     #[test]
-    fn ok_with_hasher_sha512() {
+    fn ok_with_digest_sha512() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher_sha512()
+            .digest_sha512()
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -303,11 +303,11 @@ mod controller_builder_sha2_tests {
     }
 
     #[test]
-    fn ok_with_hasher_sha512_224() {
+    fn ok_with_digest_sha512_224() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher_sha512_224()
+            .digest_sha512_224()
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -318,11 +318,11 @@ mod controller_builder_sha2_tests {
     }
 
     #[test]
-    fn ok_with_hasher_sha512_256() {
+    fn ok_with_digest_sha512_256() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher_sha512_256()
+            .digest_sha512_256()
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -335,28 +335,28 @@ mod controller_builder_sha2_tests {
 
 
 #[derive(Debug)]
-pub struct PrefixedApiKeyController<R: RngCore, H: Digest + FixedOutputReset> {
+pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: String,
     rng_source: R,
-    hasher: H,
+    digest: D,
     short_token_prefix: Option<String>,
     short_token_length: usize,
     long_token_length: usize,
 }
 
-impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
+impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     pub fn new(
         prefix: String,
         rng_source: R,
-        hasher: H,
+        digest: D,
         short_token_prefix: Option<String>,
         short_token_length: usize,
         long_token_length: usize,
-    ) -> PrefixedApiKeyController<R, H> {
+    ) -> PrefixedApiKeyController<R, D> {
         PrefixedApiKeyController {
             prefix,
             rng_source,
-            hasher,
+            digest,
             short_token_prefix,
             short_token_length,
             long_token_length,
@@ -365,7 +365,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
 
     /// Creates an instance of [ControllerBuilder] to enable building the
     /// controller via the builder pattern
-    pub fn configure() -> ControllerBuilder<R, H> {
+    pub fn configure() -> ControllerBuilder<R, D> {
         ControllerBuilder::new()
     }
 
@@ -425,7 +425,7 @@ impl<R: RngCore, H: Digest + FixedOutputReset> PrefixedApiKeyController<R, H> {
     /// reused each time this is called, which is why the [FixedOutputReset](digest::FixedOutputReset)
     /// trait is required.
     pub fn long_token_hashed(&mut self, pak: &PrefixedApiKey) -> String {
-        pak.long_token_hashed(&mut self.hasher)
+        pak.long_token_hashed(&mut self.digest)
     }
 
     /// Secure helper for checking if a given PrefixedApiKey matches a given
@@ -452,7 +452,7 @@ mod controller_tests {
             .default_lengths()
             .prefix("mycompany".to_owned())
             .rng_source(OsRng)
-            .hasher(Sha256::new())
+            .digest(Sha256::new())
             .finalize();
         assert!(controller.is_ok())
     }
@@ -524,7 +524,7 @@ mod controller_tests {
     }
 
     #[test]
-    fn generator_hasher_resets_after_hashing() {
+    fn generator_digest_resets_after_hashing() {
         let pak1_string = "mycompany_CEUsS4psCmc_BddpcwWyCT3EkDjHSSTRaSK1dxtuQgbjb";
         let pak1_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
         let pak1: PrefixedApiKey = pak1_string.try_into().unwrap();

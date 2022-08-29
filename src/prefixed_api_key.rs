@@ -55,11 +55,11 @@ impl PrefixedApiKey {
     }
 
     /// Gets the hashed form of the keys secret long token, using the hashing
-    /// algorithm provided as `hasher`. This resets the digest instance while
+    /// algorithm provided as `digest`. This resets the digest instance while
     /// finalizing so it may be reused afterward.
-    pub fn long_token_hashed<H: Digest + FixedOutputReset>(&self, hasher: &mut H) -> String {
-        Digest::update(hasher, self.long_token.clone());
-        hex::encode(hasher.finalize_reset())
+    pub fn long_token_hashed<D: Digest + FixedOutputReset>(&self, digest: &mut D) -> String {
+        Digest::update(digest, self.long_token.clone());
+        hex::encode(digest.finalize_reset())
     }
 
     /// Instantiates the struct from the string form of the api token. This
@@ -164,8 +164,8 @@ mod tests {
         let hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
 
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
-        let mut hasher = Sha256::new();
-        assert_eq!(pak.long_token_hashed(&mut hasher), hash);
+        let mut digest = Sha256::new();
+        assert_eq!(pak.long_token_hashed(&mut digest), hash);
     }
 
     #[test]
