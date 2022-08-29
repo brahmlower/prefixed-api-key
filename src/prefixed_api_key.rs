@@ -1,5 +1,7 @@
 use digest::{Digest, FixedOutputReset};
-use std::{fmt, error::Error};
+use std::fmt;
+use std::fmt::Debug;
+use std::error::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PrefixedApiKeyError {
@@ -19,7 +21,6 @@ impl fmt::Display for PrefixedApiKeyError {
 /// the user. An instance of this struct can be instantiated from a string
 /// provided by the user for further validation, or it can be instantiated
 /// via the `new` method while generating a new key to be given to the user.
-#[derive(Debug)]
 pub struct PrefixedApiKey {
     prefix: String,
     short_token: String,
@@ -62,7 +63,7 @@ impl PrefixedApiKey {
     }
 
     /// Instantiates the struct from the string form of the api token. This
-    /// validates the string has the expected number of parts (deliniated by '_'),
+    /// validates that the string has the expected number of parts (deliniated by `"_"`),
     /// but otherwise makes no assertions or assumptions about the values.
     pub fn from_string(pak_string: &str) -> Result<PrefixedApiKey, PrefixedApiKeyError> {
         let parts: Vec<&str> = pak_string.split('_').collect();
@@ -78,8 +79,22 @@ impl PrefixedApiKey {
             parts[2].to_owned(),
         ))
     }
+}
 
-    pub fn as_string(&self) -> String {
+/// A custom implementation of Debug that masks the secret long token that way
+/// the struct can be debug printed without leaking sensitive info into logs
+impl Debug for PrefixedApiKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PrefixedApiKey")
+         .field("prefix", &self.prefix)
+         .field("short_token", &self.short_token)
+         .field("long_token", &"***")
+         .finish()
+    }
+}
+
+impl ToString for PrefixedApiKey {
+    fn to_string(&self) -> String {
         format!("{}_{}_{}", self.prefix, self.short_token, self.long_token)
     }
 }
@@ -92,13 +107,6 @@ impl TryInto<PrefixedApiKey> for &str {
     }
 }
 
-impl fmt::Display for PrefixedApiKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Displays the key without showing the secret long token
-        write!(f, "{}_{}_***", self.prefix(), self.short_token())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use sha2::{Digest, Sha256};
@@ -106,13 +114,13 @@ mod tests {
     use crate::prefixed_api_key::{PrefixedApiKey, PrefixedApiKeyError};
 
     #[test]
-    fn as_string_is_expected() {
+    fn to_string_is_expected() {
         let prefix = "mycompany".to_owned();
         let short = "abcdefg".to_owned();
         let long = "bacdegadsa".to_owned();
         let expected_token = format!("{}_{}_{}", prefix, short, long);
         let pak = PrefixedApiKey::new(prefix, short, long);
-        assert_eq!(pak.as_string(), expected_token)
+        assert_eq!(pak.to_string(), expected_token)
     }
 
     #[test]
@@ -120,7 +128,7 @@ mod tests {
         let pak_string = "mycompany_abcdefg_bacdegadsa";
         let pak_result = PrefixedApiKey::from_string(pak_string);
         assert_eq!(pak_result.is_ok(), true);
-        assert_eq!(pak_result.unwrap().as_string(), pak_string);
+        assert_eq!(pak_result.unwrap().to_string(), pak_string);
     }
 
     #[test]
@@ -128,7 +136,7 @@ mod tests {
         let pak_string = "mycompany_abcdefg_bacdegadsa";
         let pak_result: Result<PrefixedApiKey, _> = pak_string.try_into();
         assert_eq!(pak_result.is_ok(), true);
-        assert_eq!(pak_result.unwrap().as_string(), pak_string);
+        assert_eq!(pak_result.unwrap().to_string(), pak_string);
     }
 
     #[test]
@@ -136,7 +144,7 @@ mod tests {
         let pak_string = "mycompany_abcdefg_bacdegadsa".to_owned();
         let pak_result: Result<PrefixedApiKey, _> = pak_string.as_str().try_into();
         assert_eq!(pak_result.is_ok(), true);
-        assert_eq!(pak_result.unwrap().as_string(), pak_string);
+        assert_eq!(pak_result.unwrap().to_string(), pak_string);
     }
 
     #[test]
@@ -158,5 +166,14 @@ mod tests {
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
         let mut hasher = Sha256::new();
         assert_eq!(pak.long_token_hashed(&mut hasher), hash);
+    }
+
+    #[test]
+    fn check_debug_display_hides_secret_token() {
+        let pak_string = "mycompany_CEUsS4psCmc_BddpcwWyCT3EkDjHSSTRaSK1dxtuQgbjb";
+
+        let pak: PrefixedApiKey = pak_string.try_into().unwrap();
+        let debug_string = format!("{:?}", pak);
+        assert_eq!(debug_string, "PrefixedApiKey { prefix: \"mycompany\", short_token: \"CEUsS4psCmc\", long_token: \"***\" }");
     }
 }

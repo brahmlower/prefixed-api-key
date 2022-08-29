@@ -138,10 +138,10 @@ mod tests {
         let prefix = "mycompany".to_owned();
         let gen_options = GeneratorOptions::default();
         let mut generator = PrefixedApiKeyController::new(prefix, OsRng, Sha256::new(), gen_options);
-        let token_string = generator.generate_key().as_string();
+        let token_string = generator.generate_key().to_string();
         let new_inst = PrefixedApiKey::from_string(&token_string);
         assert_eq!(new_inst.is_ok(), true);
-        let new_string = new_inst.unwrap().as_string();
+        let new_string = new_inst.unwrap().to_string();
         assert_eq!(token_string, new_string);
     }
 
