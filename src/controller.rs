@@ -9,7 +9,7 @@ use crate::prefixed_api_key::PrefixedApiKey;
 
 pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: Option<String>,
-    rng_source: Option<R>,
+    rng: Option<R>,
     digest: Option<D>,
     short_token_prefix: Option<String>,
     short_token_length: Option<usize>,
@@ -20,7 +20,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
     pub fn new() -> ControllerBuilder<R, D> {
         ControllerBuilder {
             prefix: None,
-            rng_source: None,
+            rng: None,
             digest: None,
             short_token_prefix: None,
             short_token_length: None,
@@ -35,8 +35,8 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
             return Err("Expected prefix to be set, but wasn't");
         }
 
-        if self.rng_source.is_none() {
-            return Err("Expected rng_source to be set, but wasn't");
+        if self.rng.is_none() {
+            return Err("Expected rng to be set, but wasn't");
         }
 
         if self.digest.is_none() {
@@ -53,7 +53,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
 
         Ok(PrefixedApiKeyController::new(
             self.prefix.unwrap(),
-            self.rng_source.unwrap(),
+            self.rng.unwrap(),
             self.digest.unwrap(),
             self.short_token_prefix,
             self.short_token_length.unwrap(),
@@ -76,8 +76,8 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
 
     /// An instance of a struct that implements RngCore, which will be used for
     /// generating bytes used in the short and long tokens of the key.
-    pub fn rng_source(mut self, rng_source: R) -> Self {
-        self.rng_source = Some(rng_source);
+    pub fn rng(mut self, rng: R) -> Self {
+        self.rng = Some(rng);
         self
     }
 
@@ -189,7 +189,7 @@ mod controller_builder_tests {
     fn ok_with_all_values_provided() {
         let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest(Sha256::new())
             .short_token_prefix(None)
             .short_token_length(4)
@@ -203,7 +203,7 @@ mod controller_builder_tests {
         // We just omit setting the short_token_prefix to use the default None value
         let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest(Sha256::new())
             .short_token_length(4)
             .long_token_length(500)
@@ -215,7 +215,7 @@ mod controller_builder_tests {
     fn ok_with_default_lengths() {
         let controller_result = ControllerBuilder::<OsRng, Sha256>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
@@ -246,7 +246,7 @@ mod controller_builder_sha2_tests {
     fn ok_with_digest_sha224() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest_sha256()
             .short_token_prefix(None)
             .default_lengths()
@@ -261,7 +261,7 @@ mod controller_builder_sha2_tests {
     fn ok_with_digest_sha256() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest_sha256()
             .short_token_prefix(None)
             .default_lengths()
@@ -276,7 +276,7 @@ mod controller_builder_sha2_tests {
     fn ok_with_digest_sha384() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest_sha384()
             .short_token_prefix(None)
             .default_lengths()
@@ -291,7 +291,7 @@ mod controller_builder_sha2_tests {
     fn ok_with_digest_sha512() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest_sha512()
             .short_token_prefix(None)
             .default_lengths()
@@ -306,7 +306,7 @@ mod controller_builder_sha2_tests {
     fn ok_with_digest_sha512_224() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest_sha512_224()
             .short_token_prefix(None)
             .default_lengths()
@@ -321,7 +321,7 @@ mod controller_builder_sha2_tests {
     fn ok_with_digest_sha512_256() {
         let controller_result = ControllerBuilder::<OsRng, _>::new()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest_sha512_256()
             .short_token_prefix(None)
             .default_lengths()
@@ -337,7 +337,7 @@ mod controller_builder_sha2_tests {
 #[derive(Debug)]
 pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: String,
-    rng_source: R,
+    rng: R,
     digest: D,
     short_token_prefix: Option<String>,
     short_token_length: usize,
@@ -347,7 +347,7 @@ pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
 impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     pub fn new(
         prefix: String,
-        rng_source: R,
+        rng: R,
         digest: D,
         short_token_prefix: Option<String>,
         short_token_length: usize,
@@ -355,7 +355,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     ) -> PrefixedApiKeyController<R, D> {
         PrefixedApiKeyController {
             prefix,
-            rng_source,
+            rng,
             digest,
             short_token_prefix,
             short_token_length,
@@ -375,7 +375,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
         // TODO: need to use try_fill_bytes to account for problems with the
         // underlying rng source. typically this will be fine, but the RngCore
         // docs say errors can arrise, and will cause a panic if you use fill_bytes
-        self.rng_source.fill_bytes(&mut random_bytes);
+        self.rng.fill_bytes(&mut random_bytes);
         random_bytes
     }
 
@@ -451,7 +451,7 @@ mod controller_tests {
         let controller = PrefixedApiKeyController::configure()
             .default_lengths()
             .prefix("mycompany".to_owned())
-            .rng_source(OsRng)
+            .rng(OsRng)
             .digest(Sha256::new())
             .finalize();
         assert!(controller.is_ok())
