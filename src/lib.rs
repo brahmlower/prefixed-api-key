@@ -7,3 +7,10 @@ pub use crate::controller_builder::ControllerBuilder;
 
 mod controller;
 pub use crate::controller::PrefixedApiKeyController;
+
+// reexport rngs
+pub use rand;
+
+// rexport digests
+#[cfg(feature = "sha2")]
+pub use sha2;
