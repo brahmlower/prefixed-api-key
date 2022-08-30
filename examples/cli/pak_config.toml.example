@@ -1,0 +1,5 @@
+
+rng = "osrng"
+digest = "sha256"
+short_token_length = 8
+long_token_length = 48
