@@ -3,6 +3,7 @@ pub use crate::prefixed_api_key::PrefixedApiKey;
 pub use crate::prefixed_api_key::PrefixedApiKeyError;
 
 mod controller_builder;
+pub use crate::controller_builder::BuilderError;
 pub use crate::controller_builder::ControllerBuilder;
 
 mod controller;
