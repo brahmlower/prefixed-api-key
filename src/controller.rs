@@ -1,4 +1,4 @@
-use crypto::util::fixed_time_eq;
+use constant_time_eq::constant_time_eq;
 use digest::{Digest, FixedOutputReset};
 use rand::RngCore;
 
@@ -101,11 +101,11 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
 
     /// Secure helper for checking if a given PrefixedApiKey matches a given
     /// long token hash. This uses the hashing algorithm configured on the controller
-    /// and uses the [fixed_time_eq](crypto::util::fixed_time_eq) method of comparing hashes
+    /// and uses the [constant_time_eq](constant_time_eq::constant_time_eq) method of comparing hashes
     /// to avoid possible timing attacks.
     pub fn check_hash(&mut self, pak: &PrefixedApiKey, hash: String) -> bool {
         let pak_hash = self.long_token_hashed(pak);
-        fixed_time_eq(pak_hash.as_bytes(), hash.as_bytes())
+        constant_time_eq(pak_hash.as_bytes(), hash.as_bytes())
     }
 }
 
