@@ -3,11 +3,40 @@ use rand::{
     rngs::{OsRng, StdRng, ThreadRng},
     RngCore, SeedableRng,
 };
+use std::error::Error;
+use std::fmt;
 
 #[cfg(feature = "sha2")]
 use sha2::{Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};
 
 use crate::controller::PrefixedApiKeyController;
+
+#[derive(Debug, Clone)]
+pub enum BuilderError {
+    MissingPrefix,
+    MissingRng,
+    MissingDigest,
+    MissingShortTokenLength,
+    MissingLongTokenLength,
+}
+
+impl fmt::Display for BuilderError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            BuilderError::MissingPrefix => write!(f, "expected prefix to be set, but wasn't"),
+            BuilderError::MissingRng => write!(f, "expected rng to be set, but wasn't"),
+            BuilderError::MissingDigest => write!(f, "expected digest to be set, but wasn't"),
+            BuilderError::MissingShortTokenLength => {
+                write!(f, "expected short_token_length to be set, but wasn't")
+            }
+            BuilderError::MissingLongTokenLength => {
+                write!(f, "expected long_token_length to be set, but wasn't")
+            }
+        }
+    }
+}
+
+impl Error for BuilderError {}
 
 pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: Option<String>,
@@ -32,25 +61,25 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
 
     /// Finishes building the controller, returning Err if any necessary configs are
     /// missing.
-    pub fn finalize(self) -> Result<PrefixedApiKeyController<R, D>, &'static str> {
+    pub fn finalize(self) -> Result<PrefixedApiKeyController<R, D>, BuilderError> {
         if self.prefix.is_none() {
-            return Err("Expected prefix to be set, but wasn't");
+            return Err(BuilderError::MissingPrefix);
         }
 
         if self.rng.is_none() {
-            return Err("Expected rng to be set, but wasn't");
+            return Err(BuilderError::MissingRng);
         }
 
         if self.digest.is_none() {
-            return Err("Expected digest to be set, but wasn't");
+            return Err(BuilderError::MissingDigest);
         }
 
         if self.short_token_length.is_none() {
-            return Err("Expected short_token_length to be set, but wasn't");
+            return Err(BuilderError::MissingShortTokenLength);
         }
 
         if self.long_token_length.is_none() {
-            return Err("Expected long_token_length to be set, but wasn't");
+            return Err(BuilderError::MissingLongTokenLength);
         }
 
         Ok(PrefixedApiKeyController::new(
