@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use constant_time_eq::constant_time_eq;
 use digest::{Digest, FixedOutputReset};
 use rand::RngCore;
@@ -9,17 +11,16 @@ use crate::prefixed_api_key::PrefixedApiKey;
 pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: String,
     rng: R,
-    digest: D,
+    digest: PhantomData<D>,
     short_token_prefix: Option<String>,
     short_token_length: usize,
     long_token_length: usize,
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset + Clone> PrefixedApiKeyController<R, D> {
+impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     pub fn new(
         prefix: String,
         rng: R,
-        digest: D,
         short_token_prefix: Option<String>,
         short_token_length: usize,
         long_token_length: usize,
@@ -27,7 +28,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> PrefixedApiKeyController<
         PrefixedApiKeyController {
             prefix,
             rng,
-            digest,
+            digest: PhantomData,
             short_token_prefix,
             short_token_length,
             long_token_length,
@@ -96,7 +97,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> PrefixedApiKeyController<
     /// reused each time this is called, which is why the [FixedOutputReset](digest::FixedOutputReset)
     /// trait is required.
     pub fn long_token_hashed(&self, pak: &PrefixedApiKey) -> String {
-        let mut digest = self.digest.clone();
+        let mut digest = D::new();
         pak.long_token_hashed(&mut digest)
     }
 
@@ -113,32 +114,25 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> PrefixedApiKeyController<
 #[cfg(test)]
 mod controller_tests {
     use rand::rngs::OsRng;
-    use sha2::{Digest, Sha256};
+    use sha2::Sha256;
 
     use crate::controller::PrefixedApiKeyController;
     use crate::PrefixedApiKey;
 
     #[test]
     fn configuration_works() {
-        let controller = PrefixedApiKeyController::configure()
+        let controller = PrefixedApiKeyController::<_, Sha256>::configure()
             .default_lengths()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
-            .digest(Sha256::new())
             .finalize();
         assert!(controller.is_ok())
     }
 
     #[test]
     fn generator() {
-        let mut generator = PrefixedApiKeyController::new(
-            "mycompany".to_owned(),
-            OsRng,
-            Sha256::new(),
-            None,
-            8,
-            24,
-        );
+        let mut generator =
+            PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
         let token_string = generator.generate_key().to_string();
         let pak_result = PrefixedApiKey::from_string(&token_string);
         assert_eq!(pak_result.is_ok(), true);
@@ -150,10 +144,9 @@ mod controller_tests {
     fn generator_short_token_prefix() {
         let short_length = 8;
         let short_prefix = "a".repeat(short_length);
-        let mut generator = PrefixedApiKeyController::new(
+        let mut generator = PrefixedApiKeyController::<_, Sha256>::new(
             "mycompany".to_owned(),
             OsRng,
-            Sha256::new(),
             Some(short_prefix.clone()),
             short_length,
             24,
@@ -164,14 +157,8 @@ mod controller_tests {
 
     #[test]
     fn generate_key_and_hash() {
-        let mut generator = PrefixedApiKeyController::new(
-            "mycompany".to_owned(),
-            OsRng,
-            Sha256::new(),
-            None,
-            8,
-            24,
-        );
+        let mut generator =
+            PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
         let (pak, hash) = generator.generate_key_and_hash();
         assert!(generator.check_hash(&pak, &hash))
     }
@@ -183,14 +170,8 @@ mod controller_tests {
 
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
 
-        let mut generator = PrefixedApiKeyController::new(
-            "mycompany".to_owned(),
-            OsRng,
-            Sha256::new(),
-            None,
-            8,
-            24,
-        );
+        let mut generator =
+            PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
 
         assert_eq!(generator.long_token_hashed(&pak), hash);
     }
@@ -205,14 +186,8 @@ mod controller_tests {
         let pak2_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
         let pak2: PrefixedApiKey = pak2_string.try_into().unwrap();
 
-        let mut generator = PrefixedApiKeyController::new(
-            "mycompany".to_owned(),
-            OsRng,
-            Sha256::new(),
-            None,
-            8,
-            24,
-        );
+        let mut generator =
+            PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
 
         assert_eq!(generator.long_token_hashed(&pak1), pak1_hash);
         assert_eq!(generator.long_token_hashed(&pak2), pak2_hash);
@@ -224,14 +199,8 @@ mod controller_tests {
         let pak_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
 
-        let mut generator = PrefixedApiKeyController::new(
-            "mycompany".to_owned(),
-            OsRng,
-            Sha256::new(),
-            None,
-            8,
-            24,
-        );
+        let mut generator =
+            PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
 
         assert!(generator.check_hash(&pak, pak_hash));
     }
