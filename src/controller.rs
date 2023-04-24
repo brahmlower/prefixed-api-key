@@ -5,7 +5,7 @@ use rand::RngCore;
 use crate::controller_builder::ControllerBuilder;
 use crate::prefixed_api_key::PrefixedApiKey;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: String,
     rng: R,
