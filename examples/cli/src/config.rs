@@ -1,8 +1,7 @@
-use std::fs;
 use serde_derive::Deserialize;
-use toml;
+use std::fs;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct Config {
     pub digest: Option<String>,
     pub rng: Option<String>,
@@ -11,7 +10,7 @@ pub struct Config {
     pub short_token_length_str: Option<String>,
     pub short_token_prefix: Option<String>,
     pub long_token_length: Option<usize>,
-    pub long_token_length_str: Option<String>
+    pub long_token_length_str: Option<String>,
 }
 
 impl Config {
@@ -21,21 +20,6 @@ impl Config {
 
     pub fn long_length_as_str(&mut self) {
         self.long_token_length_str = self.long_token_length.map(|v| format!("{}", v));
-    }
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            digest: None,
-            rng: None,
-            prefix: None,
-            short_token_length: None,
-            short_token_length_str: None,
-            short_token_prefix: None,
-            long_token_length: None,
-            long_token_length_str: None,
-        }
     }
 }
 
