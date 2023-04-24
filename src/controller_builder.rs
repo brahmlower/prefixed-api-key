@@ -99,19 +99,12 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
         self
     }
 
-    /// An instance of a struct that implements RngCore, which will be used for
+    /// Sets an rng source that implements [RngCore](rand::RngCore), which will be used for
     /// generating bytes used in the short and long tokens of the key.
     pub fn rng(mut self, rng: R) -> Self {
         self.rng = Some(rng);
         self
     }
-
-    // /// An instance of a struct that implements Digest, which will be used for
-    // /// hashing the secret token of new keys.
-    // pub fn digest<DD: Digest + FixedOutputReset>(mut self) -> ControllerBuilder<R, DD> {
-    //     self.digest = PhantomData::<D>;
-    //     self
-    // }
 
     /// An optional prefix for the short tokens. The length of this value should
     /// be less than the value you set for the `short_token_length`, and should

@@ -170,7 +170,7 @@ mod controller_tests {
 
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
 
-        let mut generator =
+        let generator =
             PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
 
         assert_eq!(generator.long_token_hashed(&pak), hash);
@@ -186,7 +186,7 @@ mod controller_tests {
         let pak2_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
         let pak2: PrefixedApiKey = pak2_string.try_into().unwrap();
 
-        let mut generator =
+        let generator =
             PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
 
         assert_eq!(generator.long_token_hashed(&pak1), pak1_hash);
@@ -199,7 +199,7 @@ mod controller_tests {
         let pak_hash = "0f01ab6e0833f280b73b2b618c16102d91c0b7c585d42a080d6e6603239a8bee";
         let pak: PrefixedApiKey = pak_string.try_into().unwrap();
 
-        let mut generator =
+        let generator =
             PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
 
         assert!(generator.check_hash(&pak, pak_hash));
