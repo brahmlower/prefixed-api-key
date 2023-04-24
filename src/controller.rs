@@ -15,7 +15,7 @@ pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
     long_token_length: usize,
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
+impl<R: RngCore, D: Digest + FixedOutputReset + Clone> PrefixedApiKeyController<R, D> {
     pub fn new(
         prefix: String,
         rng: R,
@@ -95,15 +95,16 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     /// algorithm configured on the controller. The hashing instance gets
     /// reused each time this is called, which is why the [FixedOutputReset](digest::FixedOutputReset)
     /// trait is required.
-    pub fn long_token_hashed(&mut self, pak: &PrefixedApiKey) -> String {
-        pak.long_token_hashed(&mut self.digest)
+    pub fn long_token_hashed(&self, pak: &PrefixedApiKey) -> String {
+        let mut digest = self.digest.clone();
+        pak.long_token_hashed(&mut digest)
     }
 
     /// Secure helper for checking if a given PrefixedApiKey matches a given
     /// long token hash. This uses the hashing algorithm configured on the controller
     /// and uses the [constant_time_eq](constant_time_eq::constant_time_eq) method of comparing hashes
     /// to avoid possible timing attacks.
-    pub fn check_hash(&mut self, pak: &PrefixedApiKey, hash: String) -> bool {
+    pub fn check_hash(&self, pak: &PrefixedApiKey, hash: &str) -> bool {
         let pak_hash = self.long_token_hashed(pak);
         constant_time_eq(pak_hash.as_bytes(), hash.as_bytes())
     }
@@ -172,7 +173,7 @@ mod controller_tests {
             24,
         );
         let (pak, hash) = generator.generate_key_and_hash();
-        assert!(generator.check_hash(&pak, hash))
+        assert!(generator.check_hash(&pak, &hash))
     }
 
     #[test]
@@ -232,6 +233,6 @@ mod controller_tests {
             24,
         );
 
-        assert!(generator.check_hash(&pak, pak_hash.to_string()));
+        assert!(generator.check_hash(&pak, pak_hash));
     }
 }

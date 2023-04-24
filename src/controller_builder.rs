@@ -38,7 +38,7 @@ impl fmt::Display for BuilderError {
 
 impl Error for BuilderError {}
 
-pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
+pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset + Clone> {
     prefix: Option<String>,
     rng: Option<R>,
     digest: Option<D>,
@@ -47,7 +47,7 @@ pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
     long_token_length: Option<usize>,
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
+impl<R: RngCore, D: Digest + FixedOutputReset + Clone> ControllerBuilder<R, D> {
     pub fn new() -> ControllerBuilder<R, D> {
         ControllerBuilder {
             prefix: None,
@@ -141,7 +141,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
     }
 }
 
-impl<D: Digest + FixedOutputReset> ControllerBuilder<OsRng, D> {
+impl<D: Digest + FixedOutputReset + Clone> ControllerBuilder<OsRng, D> {
     /// Helper function for configuring the Controller with an instance of [OsRng](rand::rngs::OsRng).
     ///
     /// <p style="background:rgba(255,181,77,0.16);padding:0.75em;">
@@ -157,7 +157,7 @@ impl<D: Digest + FixedOutputReset> ControllerBuilder<OsRng, D> {
     }
 }
 
-impl<D: Digest + FixedOutputReset> ControllerBuilder<ThreadRng, D> {
+impl<D: Digest + FixedOutputReset + Clone> ControllerBuilder<ThreadRng, D> {
     /// Helper function for configuring the Controller with an instance of [ThreadRng](rand::rngs::ThreadRng) created
     /// by calling [default](rand::rngs::ThreadRng::default).
     ///
@@ -174,7 +174,7 @@ impl<D: Digest + FixedOutputReset> ControllerBuilder<ThreadRng, D> {
     }
 }
 
-impl<D: Digest + FixedOutputReset> ControllerBuilder<StdRng, D> {
+impl<D: Digest + FixedOutputReset + Clone> ControllerBuilder<StdRng, D> {
     /// Helper function for configuring the Controller with an instance of [StdRng](rand::rngs::StdRng) created
     /// by calling [from_entropy](rand::rngs::StdRng::from_entropy).
     ///
@@ -261,7 +261,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
     }
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset> Default for ControllerBuilder<R, D> {
+impl<R: RngCore, D: Digest + FixedOutputReset + Clone> Default for ControllerBuilder<R, D> {
     fn default() -> Self {
         Self::new()
     }
