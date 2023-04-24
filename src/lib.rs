@@ -15,3 +15,7 @@ pub use rand;
 // rexport digests
 #[cfg(feature = "sha2")]
 pub use sha2;
+
+#[doc = include_str!("../readme.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
