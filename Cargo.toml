@@ -1,13 +1,13 @@
 [package]
 name = "prefixed-api-key"
-description = "A Rust module for generating a prefixed API Key"
+description = "A Rust module for generating a Prefixed API Key"
 authors = ["Brahm Lower <contact@brahmlower.io>"]
 homepage = "https://github.com/brahmlower/prefixed-api-key"
 repository = "https://github.com/brahmlower/prefixed-api-key"
 documentation = "https://docs.rs/prefixed-api-key"
 license = "MIT"
 readme = "readme.md"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 edition = "2021"
 
 [features]
