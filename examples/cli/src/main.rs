@@ -1,20 +1,20 @@
-use clap::{arg, Command, Arg};
+use clap::{arg, Arg, Command};
 
-mod config;
 mod command_check;
 mod command_generate;
+mod config;
 
-use config::{Config, load_config};
 use command_check::check;
 use command_generate::generate;
+use config::{load_config, Config};
 
-fn cli<'a>(config: &'a mut Config) -> Command<'a> {
+fn cli(config: &mut Config) -> Command {
     // rng config
     let mut rng_arg = Arg::new("rng")
         .short('r')
         .long("rng")
         .takes_value(true)
-        .help("The rng source");
+        .help("The rng source [Options: osrng]");
 
     if config.rng.is_some() {
         let rng_default = config.rng.as_ref().unwrap();
@@ -26,7 +26,7 @@ fn cli<'a>(config: &'a mut Config) -> Command<'a> {
         .short('d')
         .long("digest")
         .takes_value(true)
-        .help("The hashing digest");
+        .help("The hashing digest [Options: sha256]");
 
     if config.digest.is_some() {
         let digest_default = config.digest.as_ref().unwrap();

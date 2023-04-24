@@ -27,24 +27,25 @@ jobs:
           components: rustfmt, clippy
 
       - name: Check fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+        run: cargo clippy -- -D warnings
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
+        run: cargo build --release
 
       - name: Unit Tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+        run: cargo test --all-features
+
+      - name: "Example CLI: Check fmt"
+        run: cd examples/cli && cargo fmt --all -- --check
+
+      - name: "Example CLI: Clippy"
+        run: cd examples/cli && cargo clippy -- -D warnings
+
+      - name: "Example CLI: Build"
+        run: cd examples/cli && cargo build --release
+
+      - name: "Example CLI: Test"
+        run: cd examples/cli && cargo test --all-features
