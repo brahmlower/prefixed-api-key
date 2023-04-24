@@ -3,8 +3,8 @@ use rand::{
     rngs::{OsRng, StdRng, ThreadRng},
     RngCore, SeedableRng,
 };
-use std::error::Error;
 use std::fmt;
+use std::{error::Error, marker::PhantomData};
 
 #[cfg(feature = "sha2")]
 use sha2::{Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};
@@ -38,21 +38,21 @@ impl fmt::Display for BuilderError {
 
 impl Error for BuilderError {}
 
-pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset + Clone> {
+pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
     prefix: Option<String>,
     rng: Option<R>,
-    digest: Option<D>,
+    digest: PhantomData<D>,
     short_token_prefix: Option<String>,
     short_token_length: Option<usize>,
     long_token_length: Option<usize>,
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset + Clone> ControllerBuilder<R, D> {
+impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
     pub fn new() -> ControllerBuilder<R, D> {
         ControllerBuilder {
             prefix: None,
             rng: None,
-            digest: None,
+            digest: PhantomData,
             short_token_prefix: None,
             short_token_length: None,
             long_token_length: None,
@@ -70,10 +70,6 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> ControllerBuilder<R, D> {
             return Err(BuilderError::MissingRng);
         }
 
-        if self.digest.is_none() {
-            return Err(BuilderError::MissingDigest);
-        }
-
         if self.short_token_length.is_none() {
             return Err(BuilderError::MissingShortTokenLength);
         }
@@ -85,7 +81,6 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> ControllerBuilder<R, D> {
         Ok(PrefixedApiKeyController::new(
             self.prefix.unwrap(),
             self.rng.unwrap(),
-            self.digest.unwrap(),
             self.short_token_prefix,
             self.short_token_length.unwrap(),
             self.long_token_length.unwrap(),
@@ -111,12 +106,12 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> ControllerBuilder<R, D> {
         self
     }
 
-    /// An instance of a struct that implements Digest, which will be used for
-    /// hashing the secret token of new keys.
-    pub fn digest(mut self, digest: D) -> Self {
-        self.digest = Some(digest);
-        self
-    }
+    // /// An instance of a struct that implements Digest, which will be used for
+    // /// hashing the secret token of new keys.
+    // pub fn digest<DD: Digest + FixedOutputReset>(mut self) -> ControllerBuilder<R, DD> {
+    //     self.digest = PhantomData::<D>;
+    //     self
+    // }
 
     /// An optional prefix for the short tokens. The length of this value should
     /// be less than the value you set for the `short_token_length`, and should
@@ -192,22 +187,22 @@ impl<D: Digest + FixedOutputReset + Clone> ControllerBuilder<StdRng, D> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha224> {
-    /// Helper function for configuring the Controller with a new [Sha224](sha2::Sha224) instance
-    ///
-    /// Requires the "sha2" feature
-    pub fn digest_sha224(self) -> Self {
-        self.digest(Sha224::new())
-    }
-}
-
-#[cfg(feature = "sha2")]
 impl ControllerBuilder<OsRng, Sha256> {
     /// Helper function for configuring the Controller with a new [Sha256](sha2::Sha256) instance
     ///
     /// Requires the "sha2" feature
     pub fn seam_defaults(self) -> Self {
-        self.digest(Sha256::new()).rng_osrng().default_lengths()
+        self.digest_sha256().rng_osrng().default_lengths()
+    }
+}
+
+#[cfg(feature = "sha2")]
+impl<R: RngCore> ControllerBuilder<R, Sha224> {
+    /// Helper function for configuring the Controller with a new [Sha224](sha2::Sha224) instance
+    ///
+    /// Requires the "sha2" feature
+    pub fn digest_sha224(self) -> Self {
+        self
     }
 }
 
@@ -217,7 +212,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha256> {
     ///
     /// Requires the "sha2" feature
     pub fn digest_sha256(self) -> Self {
-        self.digest(Sha256::new())
+        self
     }
 }
 
@@ -227,7 +222,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha384> {
     ///
     /// Requires the "sha2" feature
     pub fn digest_sha384(self) -> Self {
-        self.digest(Sha384::new())
+        self
     }
 }
 
@@ -237,7 +232,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512> {
     ///
     /// Requires the "sha2" feature
     pub fn digest_sha512(self) -> Self {
-        self.digest(Sha512::new())
+        self
     }
 }
 
@@ -247,7 +242,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_224> {
     ///
     /// Requires the "sha2" feature
     pub fn digest_sha512_224(self) -> Self {
-        self.digest(Sha512_224::new())
+        self
     }
 }
 
@@ -257,7 +252,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
     ///
     /// Requires the "sha2" feature
     pub fn digest_sha512_256(self) -> Self {
-        self.digest(Sha512_256::new())
+        self
     }
 }
 
@@ -270,7 +265,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset + Clone> Default for ControllerBui
 #[cfg(test)]
 mod controller_builder_tests {
     use rand::rngs::OsRng;
-    use sha2::{Digest, Sha256};
+    use sha2::Sha256;
 
     use super::ControllerBuilder;
 
@@ -282,10 +277,9 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_all_values_provided() {
-        let controller_result = ControllerBuilder::new()
+        let controller_result = ControllerBuilder::<_, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
-            .digest(Sha256::new())
             .short_token_prefix(None)
             .short_token_length(4)
             .long_token_length(500)
@@ -296,10 +290,9 @@ mod controller_builder_tests {
     #[test]
     fn ok_with_default_short_token_prefix() {
         // We just omit setting the short_token_prefix to use the default None value
-        let controller_result = ControllerBuilder::new()
+        let controller_result = ControllerBuilder::<_, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
-            .digest(Sha256::new())
             .short_token_length(4)
             .long_token_length(500)
             .finalize();
@@ -308,10 +301,9 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_default_lengths() {
-        let controller_result = ControllerBuilder::new()
+        let controller_result = ControllerBuilder::<_, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng(OsRng)
-            .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -320,10 +312,9 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_rng_osrng() {
-        let controller_result = ControllerBuilder::new()
+        let controller_result = ControllerBuilder::<_, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng_osrng()
-            .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -332,10 +323,9 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_rng_threadrng() {
-        let controller_result = ControllerBuilder::new()
+        let controller_result = ControllerBuilder::<_, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng_threadrng()
-            .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -344,10 +334,9 @@ mod controller_builder_tests {
 
     #[test]
     fn ok_with_rng_stdrng() {
-        let controller_result = ControllerBuilder::new()
+        let controller_result = ControllerBuilder::<_, Sha256>::new()
             .prefix("mycompany".to_owned())
             .rng_stdrng()
-            .digest(Sha256::new())
             .short_token_prefix(None)
             .default_lengths()
             .finalize();
@@ -372,7 +361,7 @@ mod controller_builder_sha2_tests {
         D: Digest + FixedOutputReset,
     {
         let (pak, hash) = controller.generate_key_and_hash();
-        controller.check_hash(&pak, hash)
+        controller.check_hash(&pak, &hash)
     }
 
     #[test]
