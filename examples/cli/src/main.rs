@@ -70,7 +70,7 @@ fn cli(config: &mut Config) -> Command {
     }
 
     Command::new("pakcli")
-        .about("An example utility for creating/validation Prefixed API Keys")
+        .about("An example utility for creating/validating Prefixed API Keys")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
