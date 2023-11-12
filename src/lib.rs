@@ -16,6 +16,6 @@ pub use rand;
 #[cfg(feature = "sha2")]
 pub use sha2;
 
-#[doc = include_str!("../readme.md")]
+#[doc = include_str!("../README.md")]
 #[cfg(doctest)]
 pub struct ReadmeDoctests;

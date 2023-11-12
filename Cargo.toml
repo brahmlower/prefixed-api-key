@@ -6,7 +6,7 @@ homepage = "https://github.com/brahmlower/prefixed-api-key"
 repository = "https://github.com/brahmlower/prefixed-api-key"
 documentation = "https://docs.rs/prefixed-api-key"
 license = "MIT"
-readme = "readme.md"
+readme = "README.md"
 version = "0.1.0"
 edition = "2021"
 
