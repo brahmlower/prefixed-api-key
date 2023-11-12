@@ -5,6 +5,9 @@ name: Push Tests
 
 on:
   push:
+    branches:
+      - 'main'
+  pull_request:
   schedule:
     - cron: 0 13 * * 1 # Every Monday at 1PM UTC (9AM EST)
 
@@ -13,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  test-library:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,13 +34,6 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-          components: rustfmt, clippy, cargo-msrv
-
-      - name: Check fmt
-        run: cargo fmt --all -- --check
-
-      - name: Clippy
-        run: cargo clippy -- -D warnings
 
       - name: Build
         run: cargo build --release
@@ -45,17 +41,75 @@ jobs:
       - name: Unit Tests
         run: cargo test --all-features
 
-      - name: Minimum Supported Rust Version
-        run: cargo msrv verify
+  test-examples:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
 
-      - name: "Example CLI: Check fmt"
-        run: cd examples/cli && cargo fmt --all -- --check
+    steps:
+      - uses: actions/checkout@v2
 
-      - name: "Example CLI: Clippy"
-        run: cd examples/cli && cargo clippy -- -D warnings
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
 
       - name: "Example CLI: Build"
         run: cd examples/cli && cargo build --release
 
       - name: "Example CLI: Test"
         run: cd examples/cli && cargo test --all-features
+
+  msrv-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-msrv
+        run: cargo install cargo-msrv
+
+      - name: Minimum Supported Rust Version
+        run: cargo msrv verify
+
+  code-hygiene:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt, clippy
+
+      - name: Check fmt
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+
+      - name: "Example CLI: Check fmt"
+        run: cd examples/cli && cargo fmt --all -- --check
+
+      - name: "Example CLI: Clippy"
+        run: cd examples/cli && cargo clippy -- -D warnings
