@@ -23,12 +23,12 @@ Hash:	c239c03136ffdd9988c48ac97c00f3e546293b5737822c5de64334abe3235675
 
 ## Checking an api key
 
-The cli doesn't implement any storage mechanism for keys it generates since this is just a demo, but you can check an api token by providing the untrusted token and the hash you expect it to match. The output will simply say if it matches or not.
+You can check an api token by providing the PAK and the hash you expect it to match. The output will simply say if it matches or not. Here we're using the PAK and hash from the previous example:
 
 ```shell
-$ cargo run -- check foobarinc_N5vKc5FMofm_qtgdkcSBwnBC1uMY4TCT37zLuSsp17qyUbU29vHZJ4pNB29qFFY5uCcAqJdVzGLmR aae8a24df9cbe15efd2d52a3d8d594210259ec19b2c2709a8a9a03b25de
-Match:	false
+$ cargo run -- check foobarinc_N5vKc5FMofm_qtgdkcSBwnBC1uMY4TCT37zLuSsp17qyUbU29vHZJ4pNB29qFFY5uCcAqJdVzGLmR c239c03136ffdd9988c48ac97c00f3e546293b5737822c5de64334abe3235675
+Match:	true
 
-% cargo run -- check foobarinc_N5vKc5FMofm_qtgdkcSBwnBC1uMY4TCT37zLuSsp17qyUbU29vHZJ4pNB29qFFY5uCcAqJdVzGLmR foobarbaz
+% cargo run -- check invalid_key_from_user c239c03136ffdd9988c48ac97c00f3e546293b5737822c5de64334abe3235675
 Match:	false
 ```
