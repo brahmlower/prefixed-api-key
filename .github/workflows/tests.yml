@@ -1,9 +1,16 @@
 # Based on the matrix example recipe from actions-rs:
 # https://github.com/actions-rs/meta/blob/master/recipes/matrix.md
 
-on: push
-
 name: Push Tests
+
+on:
+  push:
+  schedule:
+    - cron: 0 13 * * 1 # Every Monday at 1PM UTC (9AM EST)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -14,7 +21,7 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.60.0  # MSRV
+          - 1.60.0  # Minimum Supported Rust Version
 
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +31,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-          components: rustfmt, clippy
+          components: rustfmt, clippy, cargo-msrv
 
       - name: Check fmt
         run: cargo fmt --all -- --check
@@ -37,6 +44,9 @@ jobs:
 
       - name: Unit Tests
         run: cargo test --all-features
+
+      - name: Minimum Supported Rust Version
+        run: cargo msrv verify
 
       - name: "Example CLI: Check fmt"
         run: cd examples/cli && cargo fmt --all -- --check

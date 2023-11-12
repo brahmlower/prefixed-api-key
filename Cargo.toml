@@ -10,6 +10,13 @@ readme = "readme.md"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata]
+msrv = "1.60.0"
+
+[package.metadata.docs.rs]
+# Enable all feature flags so that their docs are included
+all-features = true
+
 [features]
 sha2 = ["dep:sha2"]
 all = ["sha2"]
@@ -24,7 +31,3 @@ constant_time_eq = "0.2.5"
 
 [dev-dependencies]
 sha2 = "0.10.2"
-
-[package.metadata.docs.rs]
-# Enable all feature flags so that their docs are included
-all-features = true
