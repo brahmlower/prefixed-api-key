@@ -38,7 +38,7 @@ impl fmt::Display for BuilderError {
 
 impl Error for BuilderError {}
 
-pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
+pub struct ControllerBuilder<R: RngCore + Clone, D: Digest + FixedOutputReset> {
     prefix: Option<String>,
     rng: Option<R>,
     digest: PhantomData<D>,
@@ -47,7 +47,7 @@ pub struct ControllerBuilder<R: RngCore, D: Digest + FixedOutputReset> {
     long_token_length: Option<usize>,
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
+impl<R: RngCore + Clone, D: Digest + FixedOutputReset> ControllerBuilder<R, D> {
     pub fn new() -> ControllerBuilder<R, D> {
         ControllerBuilder {
             prefix: None,
@@ -190,7 +190,7 @@ impl ControllerBuilder<OsRng, Sha256> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha224> {
+impl<R: RngCore + Clone> ControllerBuilder<R, Sha224> {
     /// Helper function for configuring the Controller with a new [Sha224](sha2::Sha224) instance
     ///
     /// Requires the "sha2" feature
@@ -200,7 +200,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha224> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha256> {
+impl<R: RngCore + Clone> ControllerBuilder<R, Sha256> {
     /// Helper function for configuring the Controller with a new [Sha256](sha2::Sha256) instance
     ///
     /// Requires the "sha2" feature
@@ -210,7 +210,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha256> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha384> {
+impl<R: RngCore + Clone> ControllerBuilder<R, Sha384> {
     /// Helper function for configuring the Controller with a new [Sha384](sha2::Sha384) instance
     ///
     /// Requires the "sha2" feature
@@ -220,7 +220,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha384> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha512> {
+impl<R: RngCore + Clone> ControllerBuilder<R, Sha512> {
     /// Helper function for configuring the Controller with a new [Sha512](sha2::Sha512) instance
     ///
     /// Requires the "sha2" feature
@@ -230,7 +230,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha512_224> {
+impl<R: RngCore + Clone> ControllerBuilder<R, Sha512_224> {
     /// Helper function for configuring the Controller with a new [Sha512_224](sha2::Sha512_224) instance
     ///
     /// Requires the "sha2" feature
@@ -240,7 +240,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_224> {
 }
 
 #[cfg(feature = "sha2")]
-impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
+impl<R: RngCore + Clone> ControllerBuilder<R, Sha512_256> {
     /// Helper function for configuring the Controller with a new [Sha512_256](sha2::Sha512_256) instance
     ///
     /// Requires the "sha2" feature
@@ -249,7 +249,7 @@ impl<R: RngCore> ControllerBuilder<R, Sha512_256> {
     }
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset + Clone> Default for ControllerBuilder<R, D> {
+impl<R: RngCore + Clone, D: Digest + FixedOutputReset + Clone> Default for ControllerBuilder<R, D> {
     fn default() -> Self {
         Self::new()
     }
@@ -346,11 +346,9 @@ mod controller_builder_sha2_tests {
 
     use super::{ControllerBuilder, PrefixedApiKeyController};
 
-    fn controller_generates_matching_hash<R, D>(
-        mut controller: PrefixedApiKeyController<R, D>,
-    ) -> bool
+    fn controller_generates_matching_hash<R, D>(controller: PrefixedApiKeyController<R, D>) -> bool
     where
-        R: RngCore,
+        R: RngCore + Clone,
         D: Digest + FixedOutputReset,
     {
         let (pak, hash) = controller.generate_key_and_hash();
