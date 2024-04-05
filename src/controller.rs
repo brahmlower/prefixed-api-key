@@ -8,7 +8,7 @@ use crate::controller_builder::ControllerBuilder;
 use crate::prefixed_api_key::PrefixedApiKey;
 
 #[derive(Clone, Debug)]
-pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
+pub struct PrefixedApiKeyController<R: RngCore + Clone, D: Digest + FixedOutputReset> {
     prefix: String,
     rng: R,
     digest: PhantomData<D>,
@@ -17,7 +17,7 @@ pub struct PrefixedApiKeyController<R: RngCore, D: Digest + FixedOutputReset> {
     long_token_length: usize,
 }
 
-impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
+impl<R: RngCore + Clone, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     pub fn new(
         prefix: String,
         rng: R,
@@ -42,19 +42,20 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     }
 
     /// Generates random bytes using the configured random number generator
-    fn get_random_bytes(&mut self, length: usize) -> Vec<u8> {
+    fn get_random_bytes(&self, length: usize) -> Vec<u8> {
         let mut random_bytes = vec![0u8; length];
+        let mut rng = self.rng.clone();
         // TODO: need to use try_fill_bytes to account for problems with the
         // underlying rng source. typically this will be fine, but the RngCore
         // docs say errors can arrise, and will cause a panic if you use fill_bytes
-        self.rng.fill_bytes(&mut random_bytes);
+        rng.fill_bytes(&mut random_bytes);
         random_bytes
     }
 
     /// Generates a random token for part of the api key. This can be used for generating
     /// both the secret long key, and the shorter plaintext key. The random values are
     /// base58 encoded, which is a key feature/requirement of the library.
-    fn get_random_token(&mut self, length: usize) -> String {
+    fn get_random_token(&self, length: usize) -> String {
         let bytes = self.get_random_bytes(length);
         bs58::encode(bytes).into_string()
     }
@@ -63,7 +64,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
     /// prefix (if configured), and random number generator. A hash of the new keys' long
     /// token is not calculated, so you'll still need to create the hash after calling
     /// this function.
-    pub fn generate_key(&mut self) -> PrefixedApiKey {
+    pub fn generate_key(&self) -> PrefixedApiKey {
         // generate the short token
         let mut short_token = self.get_random_token(self.short_token_length);
 
@@ -86,7 +87,7 @@ impl<R: RngCore, D: Digest + FixedOutputReset> PrefixedApiKeyController<R, D> {
 
     /// Generates a new key using the [generate_key](PrefixedApiKeyController::generate_key) function, but also calculates and
     /// returns the hash of the long token.
-    pub fn generate_key_and_hash(&mut self) -> (PrefixedApiKey, String) {
+    pub fn generate_key_and_hash(&self) -> (PrefixedApiKey, String) {
         let pak = self.generate_key();
         let hash = self.long_token_hashed(&pak);
         (pak, hash)
@@ -131,7 +132,7 @@ mod controller_tests {
 
     #[test]
     fn generator() {
-        let mut generator =
+        let generator =
             PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
         let token_string = generator.generate_key().to_string();
         let pak_result = PrefixedApiKey::from_string(&token_string);
@@ -144,7 +145,7 @@ mod controller_tests {
     fn generator_short_token_prefix() {
         let short_length = 8;
         let short_prefix = "a".repeat(short_length);
-        let mut generator = PrefixedApiKeyController::<_, Sha256>::new(
+        let generator = PrefixedApiKeyController::<_, Sha256>::new(
             "mycompany".to_owned(),
             OsRng,
             Some(short_prefix.clone()),
@@ -157,7 +158,7 @@ mod controller_tests {
 
     #[test]
     fn generate_key_and_hash() {
-        let mut generator =
+        let generator =
             PrefixedApiKeyController::<_, Sha256>::new("mycompany".to_owned(), OsRng, None, 8, 24);
         let (pak, hash) = generator.generate_key_and_hash();
         assert!(generator.check_hash(&pak, &hash))
