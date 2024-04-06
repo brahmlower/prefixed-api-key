@@ -39,17 +39,17 @@ impl PrefixedApiKey {
         }
     }
 
-    /// Getter method for accessing the keys prefix
+    /// Getter method for accessing the key's prefix
     pub fn prefix(&self) -> &str {
         &self.prefix
     }
 
-    /// Getter method for accessing the keys short token
+    /// Getter method for accessing the key's short token
     pub fn short_token(&self) -> &str {
         &self.short_token
     }
 
-    /// Getter method for accessing the keys secret long token
+    /// Getter method for accessing the key's secret long token
     pub fn long_token(&self) -> &str {
         &self.long_token
     }
@@ -93,6 +93,10 @@ impl Debug for PrefixedApiKey {
     }
 }
 
+/// A manual implementation of `ToString` which does not mask the secret long token.
+/// The `Display` trait is explicitely not implemented to avoid accidentally leaking
+/// the long token in logs.
+#[allow(clippy::to_string_trait_impl)]
 impl ToString for PrefixedApiKey {
     fn to_string(&self) -> String {
         format!("{}_{}_{}", self.prefix, self.short_token, self.long_token)
