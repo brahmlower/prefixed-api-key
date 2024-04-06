@@ -5,7 +5,6 @@ use std::fs;
 pub struct Config {
     pub digest: Option<String>,
     pub rng: Option<String>,
-    pub prefix: Option<String>,
     pub short_token_length: Option<usize>,
     pub short_token_length_str: Option<String>,
     pub short_token_prefix: Option<String>,
