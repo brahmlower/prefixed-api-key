@@ -42,7 +42,7 @@ pub fn generate(matches: &ArgMatches) {
         _ => panic!("unsupported digest type"),
     };
 
-    let mut controller = builder.finalize().expect("failed to create pak controller");
+    let controller = builder.finalize().expect("failed to create pak controller");
 
     let (pak, hash) = controller.generate_key_and_hash();
     println!("PAK:\t{}\nHash:\t{}", pak.to_string(), hash);
