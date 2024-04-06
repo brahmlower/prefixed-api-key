@@ -70,7 +70,7 @@ fn main() {
 
     assert!(builder_result.is_ok());
 
-    let mut controller = builder_result.unwrap();
+    let controller = builder_result.unwrap();
 
     // Generate a new PrefixedApiKey
     let (pak, hash) = controller.generate_key_and_hash();
@@ -100,3 +100,27 @@ fn main() {
         .finalize();
 }
 ```
+
+## Testing
+
+Library tests:
+
+```ignore
+cargo test --all-features
+```
+
+Verify minimum supported rust version (MSRV):
+
+```ignore
+cargo install cargo-msrv
+cargo msrv verify
+```
+
+Testing code hygiene requires `clippy` and `rustfmt` components:
+
+```ignore
+cargo fmt --all -- --check
+cargo clippy -- -D warnings
+```
+
+The library and hygiene tests will be run for all examples too
