@@ -457,6 +457,38 @@ mod controller_builder_sha2_tests {
     }
 
     #[test]
+    fn ok_with_rng_std() {
+        let controller_result: Result<PakControllerStdSha256, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng_stdrng()
+                .digest_sha256()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
+        assert!(controller_result.is_ok());
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
+    }
+
+    #[test]
+    fn ok_with_rng_thread() {
+        let controller_result: Result<PakControllerThreadSha256, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng_threadrng()
+                .digest_sha256()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
+        assert!(controller_result.is_ok());
+        assert!(controller_generates_matching_hash(
+            controller_result.unwrap()
+        ));
+    }
+
+    #[test]
     fn ok_with_seam_deafults() {
         let controller_result: Result<PakControllerOsSha256, BuilderError> =
             ControllerBuilder::new()
