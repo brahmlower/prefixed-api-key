@@ -11,7 +11,7 @@ version = "0.2.0"
 edition = "2021"
 
 [package.metadata]
-msrv = "1.60.0"
+msrv = "1.61.0"
 
 [package.metadata.docs.rs]
 # Enable all feature flags so that their docs are included
