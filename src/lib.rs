@@ -9,6 +9,9 @@ pub use crate::controller_builder::ControllerBuilder;
 mod controller;
 pub use crate::controller::PrefixedApiKeyController;
 
+mod controller_alias;
+pub use controller_alias::*;
+
 // reexport rngs
 pub use rand;
 
@@ -17,5 +20,6 @@ pub use rand;
 pub use sha2;
 
 #[doc = include_str!("../README.md")]
+#[cfg(feature = "sha2")]
 #[cfg(doctest)]
 pub struct ReadmeDoctests;

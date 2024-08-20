@@ -341,8 +341,13 @@ mod controller_builder_tests {
 #[cfg(test)]
 mod controller_builder_sha2_tests {
     use digest::{Digest, FixedOutputReset};
-    use rand::rngs::OsRng;
-    use rand::RngCore;
+
+    use crate::{
+        rand::rngs::OsRng, rand::rngs::StdRng, rand::rngs::ThreadRng, rand::RngCore,
+        rand::SeedableRng, BuilderError, PakControllerOsSha224, PakControllerOsSha256,
+        PakControllerOsSha384, PakControllerOsSha512, PakControllerOsSha512_224,
+        PakControllerOsSha512_256, PakControllerStdSha256, PakControllerThreadSha256,
+    };
 
     use super::{ControllerBuilder, PrefixedApiKeyController};
 
@@ -357,13 +362,14 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha224() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .rng(OsRng)
-            .digest_sha256()
-            .short_token_prefix(None)
-            .default_lengths()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha224, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng(OsRng)
+                .digest_sha224()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
@@ -372,13 +378,14 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha256() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .rng(OsRng)
-            .digest_sha256()
-            .short_token_prefix(None)
-            .default_lengths()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha256, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng(OsRng)
+                .digest_sha256()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
@@ -387,13 +394,14 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha384() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .rng(OsRng)
-            .digest_sha384()
-            .short_token_prefix(None)
-            .default_lengths()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha384, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng(OsRng)
+                .digest_sha384()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
@@ -402,13 +410,14 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha512() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .rng(OsRng)
-            .digest_sha512()
-            .short_token_prefix(None)
-            .default_lengths()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha512, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng(OsRng)
+                .digest_sha512()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
@@ -417,13 +426,14 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha512_224() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .rng(OsRng)
-            .digest_sha512_224()
-            .short_token_prefix(None)
-            .default_lengths()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha512_224, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng(OsRng)
+                .digest_sha512_224()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
@@ -432,13 +442,14 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_digest_sha512_256() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .rng(OsRng)
-            .digest_sha512_256()
-            .short_token_prefix(None)
-            .default_lengths()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha512_256, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .rng(OsRng)
+                .digest_sha512_256()
+                .short_token_prefix(None)
+                .default_lengths()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
@@ -447,10 +458,11 @@ mod controller_builder_sha2_tests {
 
     #[test]
     fn ok_with_seam_deafults() {
-        let controller_result = ControllerBuilder::new()
-            .prefix("mycompany".to_owned())
-            .seam_defaults()
-            .finalize();
+        let controller_result: Result<PakControllerOsSha256, BuilderError> =
+            ControllerBuilder::new()
+                .prefix("mycompany".to_owned())
+                .seam_defaults()
+                .finalize();
         assert!(controller_result.is_ok());
         assert!(controller_generates_matching_hash(
             controller_result.unwrap()
