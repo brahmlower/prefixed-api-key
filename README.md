@@ -3,8 +3,6 @@
 
 This library is a Rust implementation of the [Prefixed API Key](https://github.com/seamapi/prefixed-api-key) typescript library. Though its interface differs slightly from the typescript version, this library provides the same set of features and functionality as the typescript version.
 
-⚠️ This library is still a work in progress.
-
 ## Prefixed API Key (Seam-style)
 
 > Example key: `mycompany_BRTRKFsL_51FwqftsmMDHHbJAMEXXHCgG`

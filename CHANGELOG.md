@@ -13,6 +13,26 @@ addition of pre-1.0.0 version compatibility behavior described by [the rust docs
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-08-20
+
+### Added
+- Added type aliases for the PrefixedApiKeyController with various generics
+  - This is a huge quality of life improvement for working with the controller:
+    ```rust
+    let controller_result: Result<PakControllerOsSha256, BuilderError> =
+        ControllerBuilder::new()
+            .prefix("mycompany".to_owned())
+            .seam_defaults()
+            .finalize();
+    ```
+- Added `try_generate_key` and `try_generate_key_and_hash` methods for safely generating new PAKs.
+
+### Changed
+- 🚨 Bumped MSRV to 1.61.0
+
+### Housekeeping
+- Small documentation & test fixes
+
 ## [0.2.0] - 2024-04-06
 
 ### Added
