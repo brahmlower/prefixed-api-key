@@ -73,7 +73,7 @@ fn main() {
     let controller = builder_result.unwrap();
 
     // Generate a new PrefixedApiKey
-    let (pak, hash) = controller.generate_key_and_hash();
+    let (pak, hash) = controller.try_generate_key_and_hash().unwrap();
 
     // Assert that the returned key matches the hash
     assert!(controller.check_hash(&pak, &hash));
